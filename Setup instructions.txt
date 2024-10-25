@@ -1,0 +1,26 @@
+Setup is complete!
+
+To run the frontend development server:
+1. Navigate to the frontend directory:
+   cd greengrep/frontend
+2. Start the development server:
+   bun dev
+
+To run the backend server:
+1. Navigate to the backend directory:
+   cd greengrep/backend
+2. Start the server:
+   bun run index.ts
+
+To start the PostgreSQL database with Docker:
+1. Make sure the Docker app is running.
+2. Navigate to the backend directory:
+   cd greengrep/backend
+3. Start the Docker container:
+   docker-compose up -d
+4. Apply Prisma migrations to create the User table:
+   npx prisma migrate dev --name init
+5. Use Prisma Studio to inspect the database:
+   npx prisma studio
+
+Happy coding!
