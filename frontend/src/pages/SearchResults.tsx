@@ -81,24 +81,28 @@ function SearchResults() {
                 {/* Results Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {files.map((file) => (
-                        <div
+                        <Link
+                            to={`/image/${encodeURIComponent(file.key)}`}
                             key={file.key}
-                            className="bg-[#002f1f] border border-[#004d2f] rounded-lg overflow-hidden hover:border-[#00ff00] transition-colors duration-200"
                         >
-                            <img
-                                src={file.url}
-                                alt={file.key}
-                                className="w-full h-48 object-cover"
-                            />
-                            <div className="p-4">
-                                <h3 className="text-[#00ff00] font-medium mb-2">{file.key}</h3>
-                                <p className="text-[#008000] text-sm">
-                                    Size: {Math.round(file.size / 1024)} KB
-                                    <br />
-                                    Modified: {new Date(file.lastModified).toLocaleDateString()}
-                                </p>
+                            <div
+                                className="bg-[#002f1f] border border-[#004d2f] rounded-lg overflow-hidden hover:border-[#00ff00] transition-colors duration-200"
+                            >
+                                <img
+                                    src={file.url}
+                                    alt={file.key}
+                                    className="w-full h-48 object-cover"
+                                />
+                                <div className="p-4">
+                                    <h3 className="text-[#00ff00] font-medium mb-2">{file.key}</h3>
+                                    <p className="text-[#008000] text-sm">
+                                        Size: {Math.round(file.size / 1024)} KB
+                                        <br />
+                                        Modified: {new Date(file.lastModified).toLocaleDateString()}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
+                        </Link>
                     ))}
                 </div>
             </main>
