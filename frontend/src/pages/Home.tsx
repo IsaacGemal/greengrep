@@ -1,6 +1,17 @@
 import { Search } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 
 function Home() {
+  const navigate = useNavigate()
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#001f0f] text-[#00ff00] flex flex-col">
       {/* Header */}
@@ -25,11 +36,15 @@ function Home() {
             <input
               type="text"
               placeholder="search for greentexts..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               className="w-full bg-[#002f1f] border border-[#004d2f] text-[#00ff00] placeholder-[#008000] pl-10 pr-20 py-6 text-lg rounded-md focus:outline-none focus:ring-2 focus:ring-[#00ff00] focus:border-transparent"
             />
           </div>
 
           <button
+            onClick={handleSearch}
             className="w-full bg-[#004d2f] hover:bg-[#006d3f] text-[#00ff00] py-6 text-lg rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#00ff00]"
           >
             Search Greentexts
