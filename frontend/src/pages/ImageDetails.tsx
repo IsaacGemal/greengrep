@@ -52,13 +52,15 @@ function ImageDetails() {
 
             {/* Main Content */}
             <main className="flex-1 p-8 flex flex-col items-center">
-                <div className="max-w-4xl w-full bg-[#002f1f] border border-[#004d2f] rounded-lg overflow-hidden">
-                    <img
-                        src={file.url}
-                        alt={file.key}
-                        className="w-full max-h-[70vh] object-contain bg-[#001f0f]"
-                    />
-                    <div className="p-6">
+                <div className="inline-block bg-[#002f1f] border border-[#004d2f] rounded-lg overflow-hidden">
+                    <div className="flex justify-center">
+                        <img
+                            src={file.url}
+                            alt={file.key}
+                            className="max-w-[90vw] max-h-[70vh] object-contain bg-[#001f0f]"
+                        />
+                    </div>
+                    <div className="p-6" style={{ width: 'min(90vw, 100%)' }}>
                         <h1 className="text-2xl font-medium mb-4">{file.key}</h1>
                         <div className="text-[#008000] space-y-2">
                             <p>Size: {Math.round(file.size / 1024)} KB</p>
