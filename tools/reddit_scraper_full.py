@@ -15,8 +15,9 @@ from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
-from selenium.webdriver.safari.options import Options
-from selenium.webdriver.safari.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 
 
 class ScrapeReddit:
@@ -29,9 +30,15 @@ class ScrapeReddit:
             subreddit (str): Name of the subreddit to scrape
 
         """
-        # Configure Selenium WebDriver
+        # Configure Chrome WebDriver
         options = Options()
-        self.driver = webdriver.Safari(service=Service(executable_path='/usr/bin/safaridriver'), options=options)
+        options.add_argument("--start-maximized")  # Start with maximized window
+        
+        # Use ChromeDriverManager to automatically handle driver installation
+        self.driver = webdriver.Chrome(
+            service=Service(ChromeDriverManager().install()),
+            options=options
+        )
         self.subreddit = subreddit
         self.postids = []
         self.jsons = []
