@@ -18,14 +18,28 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Install dependencies
+      # Frontend CI
+      - name: Install frontend dependencies
         run: cd frontend && bun install
 
-      - name: Lint
+      - name: Frontend Lint
         run: cd frontend && bun run lint
 
-      - name: Type check
+      - name: Frontend Type check
         run: cd frontend && bun run tsc -b
 
-      - name: Build
+      - name: Frontend Build
         run: cd frontend && bun run build
+
+      # Backend CI
+      - name: Install backend dependencies
+        run: cd backend && bun install
+
+      - name: Backend Lint
+        run: cd backend && bun run lint
+
+      - name: Backend Type check
+        run: cd backend && bun run type-check
+
+      - name: Backend Build
+        run: cd backend && bun run build
