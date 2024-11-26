@@ -1,17 +1,48 @@
 import { Search } from 'lucide-react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { api, S3File } from '../services/api'
 
 function SearchResults() {
     const [searchParams] = useSearchParams()
     const navigate = useNavigate()
     const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '')
-    const results = Array(Math.max(3, searchQuery.length)).fill(null) // Number of results based on query length
+    const [files, setFiles] = useState<S3File[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+        const fetchFiles = async () => {
+            try {
+                const files = await api.getFiles()
+                setFiles(files)
+            } catch (err) {
+                setError('Failed to fetch images')
+                console.error(err)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchFiles()
+    }, [])
 
     const handleSearch = () => {
         if (searchQuery.trim()) {
             navigate(`/search?q=${encodeURIComponent(searchQuery)}`)
         }
+    }
+
+    if (loading) {
+        return <div className="min-h-screen bg-[#001f0f] text-[#00ff00] flex items-center justify-center">
+            Loading...
+        </div>
+    }
+
+    if (error) {
+        return <div className="min-h-screen bg-[#001f0f] text-[#00ff00] flex items-center justify-center">
+            {error}
+        </div>
     }
 
     return (
@@ -44,25 +75,27 @@ function SearchResults() {
             <main className="flex-1 p-8">
                 {/* Results Count */}
                 <div className="text-[#008000] mb-6">
-                    Found {results.length} results for "{searchQuery}"
+                    Found {files.length} results for "{searchQuery}"
                 </div>
 
                 {/* Results Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {results.map((_, index) => (
+                    {files.map((file) => (
                         <div
-                            key={index}
+                            key={file.key}
                             className="bg-[#002f1f] border border-[#004d2f] rounded-lg overflow-hidden hover:border-[#00ff00] transition-colors duration-200"
                         >
                             <img
-                                src={`https://picsum.photos/400/300?random=${index}`}
-                                alt={`Result ${index + 1}`}
+                                src={file.url}
+                                alt={file.key}
                                 className="w-full h-48 object-cover"
                             />
                             <div className="p-4">
-                                <h3 className="text-[#00ff00] font-medium mb-2">Greentext #{index + 1}</h3>
+                                <h3 className="text-[#00ff00] font-medium mb-2">{file.key}</h3>
                                 <p className="text-[#008000] text-sm">
-                                    Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                                    Size: {Math.round(file.size / 1024)} KB
+                                    <br />
+                                    Modified: {new Date(file.lastModified).toLocaleDateString()}
                                 </p>
                             </div>
                         </div>
