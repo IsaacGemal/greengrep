@@ -1,0 +1,16 @@
+[tool.ruff]
+line-length = 88
+target-version = "py38"
+
+[tool.ruff.lint]
+# Enable all rules by default
+select = ["E", "F", "I", "N", "W", "B", "UP", "C", "D"]
+
+# Never enforce `E501` (line length violations)
+ignore = ["E501", "D203", "D213"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["greengrep"]
