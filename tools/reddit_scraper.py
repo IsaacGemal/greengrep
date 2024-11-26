@@ -4,12 +4,15 @@ Credit:
     https://medium.com/@MinatoNamikaze02/you-dont-need-the-reddit-api-to-acquire-its-data-here-s-how-41ef8f15e1db
 """
 
+import hashlib
 import json
 import os
 import random
 import time
 from datetime import datetime
+from urllib.parse import urlparse
 
+import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.safari.options import Options
@@ -118,11 +121,29 @@ class ScrapeReddit:
                 'replies': replies
             })
 
+        # Add image URL extraction
+        image_urls = []
+        if post.get('url'):
+            url = post['url']
+            # Check if URL points to an image
+            if any(url.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif']):
+                image_urls.append(url)
+
+        # Check for gallery
+        if post.get('is_gallery'):
+            media_metadata = post.get('media_metadata', {})
+            for media_id in media_metadata:
+                item = media_metadata[media_id]
+                if item['status'] == 'valid':
+                    if 's' in item:
+                        image_urls.append(item['s']['u'])
+
         return {
             'post_body': post_body,
             'post_user': post_user,
             'post_time': post_time,
-            'comments': comments_list
+            'comments': comments_list,
+            'image_urls': image_urls
         }
 
     def parse_jsons(self):
@@ -138,13 +159,35 @@ class ScrapeReddit:
 
     @staticmethod
     def save_to_json(data, subreddit):
-        """Save data to a JSON file."""
+        """Save data and images to files."""
         timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-        filename = f'data/{subreddit}/{timestamp}.json'
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
-        with open(filename, 'w') as f:
+        base_path = f'data/{subreddit}/{timestamp}'
+
+        # Create directories
+        os.makedirs(f'{base_path}/images', exist_ok=True)
+
+        # Download images
+        for post in data:
+            for url in post.get('image_urls', []):
+                try:
+                    response = requests.get(url, stream=True)
+                    if response.status_code == 200:
+                        # Create filename from URL
+                        url_hash = hashlib.md5(url.encode()).hexdigest()[:10]
+                        ext = os.path.splitext(urlparse(url).path)[1] or '.jpg'
+                        filename = f'{base_path}/images/{url_hash}{ext}'
+
+                        with open(filename, 'wb') as f:
+                            for chunk in response.iter_content(chunk_size=8192):
+                                f.write(chunk)
+                        print(f"Saved image: {filename}")
+                except Exception as e:
+                    print(f"Error downloading image {url}: {e}")
+
+        # Save JSON data
+        with open(f'{base_path}/data.json', 'w') as f:
             json.dump(data, f, indent=4)
-        print(f"Data saved to {filename}")
+        print(f"Data saved to {base_path}/data.json")
 
     def destroy(self):
         """Close the Selenium WebDriver."""
