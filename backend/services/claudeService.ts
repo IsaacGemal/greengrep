@@ -12,6 +12,7 @@ interface ImagePost {
   timestamp: string;
   poster: string;
   has_image: boolean;
+  is_nsfw: boolean;
   embedded_image?: {
     filename?: string;
     size?: string;
@@ -79,7 +80,7 @@ export async function analyzeImage(
             },
             {
               type: "text",
-              text: `Extract all information from this 4chan-style post(s) into JSON format. There may be multiple posts in the image. For each post, capture the post ID, board name, timestamp, and poster name. For posts with images, include the image details. Separate the content into arrays of greentext and regular text. Use this structure:
+              text: `You are looking at a screenshot of one or more 4chan posts. 4chan is an anonymous imageboard where users can post text and images. Posts typically have an ID number, timestamp, and optional poster name. Some text lines start with ">" which makes them appear green ("greentext"). Extract all information from this 4chan-style post(s) into JSON format. There may be multiple posts in the image. For each post, capture the post ID, board name, timestamp, and poster name. For posts with images, include the image details. Separate the content into arrays of greentext (lines starting with ">") and regular text. Lastly make a determination of whether the post contains NSFW content. Use this structure:
               {
                 "posts": [
                   {
@@ -88,6 +89,7 @@ export async function analyzeImage(
                     "timestamp": "post timestamp",
                     "poster": "poster name",
                     "has_image": true,
+                    "is_nsfw": true,
                     "embedded_image": {
                       "filename": "${filename}",
                       "size": "${size}",

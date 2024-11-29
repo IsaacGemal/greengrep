@@ -15,6 +15,7 @@ model Post {
   board     String? // Optional board name
   timestamp DateTime
   poster    String // Usually "Anonymous" but keeping it flexible
+  is_nsfw   Boolean  @default(false)
   content   Content  @relation(fields: [contentId], references: [id])
   contentId String   @unique
   image     Image?   @relation(fields: [imageId], references: [id])
