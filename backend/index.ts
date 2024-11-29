@@ -4,6 +4,7 @@ import { S3 } from "@aws-sdk/client-s3";
 import multer from "multer";
 import multerS3 from "multer-s3";
 import { analyzeImage } from "./services/claudeService";
+import { storeAnalysis } from "./services/dbService";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -88,7 +89,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
     }
 
     const s3File = req.file as Express.MulterS3.File;
-    const fileUrl = s3File.location; // S3 URL of the uploaded file
+    const fileUrl = s3File.location;
 
     // Analyze the image using Claude
     const analysis = await analyzeImage(
@@ -98,15 +99,21 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
       s3File.mimetype
     );
 
+    // Store the analysis in the database
+    const storedPosts = await storeAnalysis(analysis);
+
     res.json({
       message: "File uploaded and analyzed successfully",
       fileUrl,
       analysis,
+      storedPosts,
     });
-  } catch (error) {
+  } catch (error: Error | unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to upload file";
     console.error("Upload error:", error);
     res.status(500).json({
-      error: error instanceof Error ? error.message : "Failed to upload file",
+      error: errorMessage,
     });
   }
 });
