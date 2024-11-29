@@ -1,5 +1,5 @@
-import { Search } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { Search, Upload } from 'lucide-react'
+import { useNavigate, Link } from 'react-router-dom'
 import { useState } from 'react'
 
 function Home() {
@@ -17,6 +17,12 @@ function Home() {
       {/* Header */}
       <header className="flex justify-between p-4">
         <span className="text-[#008000]">[greentexts]</span>
+        <Link
+          to="/upload"
+          className="text-[#008000] hover:text-[#00ff00] transition-colors duration-200"
+        >
+          <Upload className="w-6 h-6" />
+        </Link>
       </header>
 
       {/* Main Content */}
