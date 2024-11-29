@@ -63,7 +63,7 @@ function Upload() {
                             onChange={handleFileChange}
                             className="hidden"
                             id="file-upload"
-                            accept=".txt,.json"
+                            accept="image/jpeg,image/png"
                         />
                         <label
                             htmlFor="file-upload"

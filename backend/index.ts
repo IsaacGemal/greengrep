@@ -67,6 +67,14 @@ const upload = multer({
       cb(null, fileName);
     },
   }),
+  fileFilter: (req, file, cb) => {
+    // Accept only jpg, jpeg, and png files
+    if (file.mimetype === "image/jpeg" || file.mimetype === "image/png") {
+      cb(null, true);
+    } else {
+      cb(new Error("Only JPG and PNG files are allowed"));
+    }
+  },
 });
 
 // Upload file endpoint
@@ -74,14 +82,14 @@ const upload = multer({
 // curl -X POST -F "file=@/path/to/your/file.jpg" http://localhost:3001/api/upload
 app.post("/api/upload", upload.single("file"), (req, res) => {
   try {
-    // The file is automatically uploaded to S3 by multer-s3
-    // You can access file details via req.file
     res.json({
       message: "File uploaded successfully",
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Upload error:", error);
-    res.status(500).json({ error: "Failed to upload file" });
+    res.status(500).json({
+      error: error.message || "Failed to upload file",
+    });
   }
 });
 
