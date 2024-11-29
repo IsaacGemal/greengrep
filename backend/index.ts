@@ -103,10 +103,10 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
       fileUrl,
       analysis,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Upload error:", error);
     res.status(500).json({
-      error: error.message || "Failed to upload file",
+      error: error instanceof Error ? error.message : "Failed to upload file",
     });
   }
 });
