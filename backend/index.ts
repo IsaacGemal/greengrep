@@ -3,6 +3,7 @@ import cors from "cors";
 import { S3 } from "@aws-sdk/client-s3";
 import multer from "multer";
 import multerS3 from "multer-s3";
+import { analyzeImage } from "./services/claudeService";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -80,10 +81,27 @@ const upload = multer({
 // Upload file endpoint
 // Example usage:
 // curl -X POST -F "file=@/path/to/your/file.jpg" http://localhost:3001/api/upload
-app.post("/api/upload", upload.single("file"), (req, res) => {
+app.post("/api/upload", upload.single("file"), async (req, res) => {
   try {
+    if (!req.file) {
+      throw new Error("No file uploaded");
+    }
+
+    const s3File = req.file as Express.MulterS3.File;
+    const fileUrl = s3File.location; // S3 URL of the uploaded file
+
+    // Analyze the image using Claude
+    const analysis = await analyzeImage(
+      fileUrl,
+      s3File.originalname,
+      s3File.size.toString(),
+      s3File.mimetype
+    );
+
     res.json({
-      message: "File uploaded successfully",
+      message: "File uploaded and analyzed successfully",
+      fileUrl,
+      analysis,
     });
   } catch (error: any) {
     console.error("Upload error:", error);
