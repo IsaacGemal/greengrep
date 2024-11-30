@@ -11,7 +11,7 @@ datasource db {
 
 model Post {
   id        String   @id @default(cuid())
-  post_id   String?  @unique // Make post_id optional
+  post_id   String?
   board     String?
   timestamp DateTime
   poster    String   @default("Anonymous")
