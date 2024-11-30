@@ -1,4 +1,5 @@
 import { Anthropic } from "@anthropic-ai/sdk";
+import { generateEmbeddings } from "./embeddings";
 
 // Initialize Claude client
 const anthropic = new Anthropic({
@@ -113,7 +114,12 @@ export async function analyzeImage(
       message.content[0].type === "text" ? message.content[0].text : "";
     console.log("Claude Analysis:", response);
 
-    return JSON.parse(response) as ImageAnalysis;
+    const analysis = JSON.parse(response) as ImageAnalysis;
+
+    // Generate embeddings for the analysis
+    await generateEmbeddings(analysis);
+
+    return analysis;
   } catch (error) {
     console.error("Error analyzing image with Claude:", error);
     throw error;
