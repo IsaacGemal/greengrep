@@ -11,7 +11,7 @@ datasource db {
 
 model Post {
   id        String   @id @default(cuid())
-  post_id   String   @unique // Original post ID from the source
+  post_id   String // @unique Original post ID from the source - right now not making it unique, easier for testing purposes
   board     String? // Optional board name
   timestamp DateTime
   poster    String // Usually "Anonymous" but keeping it flexible
@@ -36,14 +36,23 @@ model Content {
   @@index([text])
 }
 
+model Embedding {
+  id        String  @id @default(cuid())
+  image     Image   @relation(fields: [imageId], references: [id])
+  imageId   String  @unique
+  full_text String // Combined text content from all posts in the image
+  vector    Float[] // The embedding vector
+
+  @@index([imageId])
+}
+
 model Image {
-  id          String  @id @default(cuid())
+  id          String     @id @default(cuid())
   filename    String?
   size        String?
   format      String?
   dimensions  String?
-  description String? // Image description for accessibility and searching
-  posts       Post[] // One-to-many relation with Post
-
-  @@index([filename])
+  description String?
+  posts       Post[] // One image can have multiple posts
+  embedding   Embedding? // One-to-one with embedding
 }
