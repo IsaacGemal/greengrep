@@ -78,12 +78,13 @@ function SearchResults() {
                     Found {files.length} results for "{searchQuery}"
                 </div>
 
-                {/* Results Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Results Grid - Updated to masonry-style layout */}
+                <div className="columns-1 md:columns-2 lg:columns-4 gap-6">
                     {files.map((file) => (
                         <Link
                             to={`/image/${encodeURIComponent(file.key)}`}
                             key={file.key}
+                            className="block mb-6 break-inside-avoid"
                         >
                             <div
                                 className="bg-[#002f1f] border border-[#004d2f] rounded-lg overflow-hidden hover:border-[#00ff00] transition-colors duration-200"
@@ -91,7 +92,7 @@ function SearchResults() {
                                 <img
                                     src={file.url}
                                     alt={file.key}
-                                    className="w-full h-48 object-cover"
+                                    className="w-full h-auto"
                                 />
                                 <div className="p-4">
                                     <h3 className="text-[#00ff00] font-medium mb-2">{file.key}</h3>
