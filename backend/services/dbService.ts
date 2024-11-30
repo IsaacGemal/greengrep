@@ -28,16 +28,22 @@ export async function storeAnalysis(analysis: ImageAnalysis) {
         });
       }
 
-      // Create the Post
+      // Create the Post with optional post_id
       return await prisma.post.create({
         data: {
-          post_id: post.post_id,
+          post_id: post.post_id || null,
           board: post.board,
           timestamp: new Date(post.timestamp),
-          poster: post.poster,
+          poster: post.poster || "Anonymous",
           is_nsfw: post.is_nsfw || false,
-          contentId: content.id,
-          imageId: image?.id,
+          content: {
+            connect: { id: content.id },
+          },
+          image: image
+            ? {
+                connect: { id: image.id },
+              }
+            : undefined,
         },
         include: {
           content: true,

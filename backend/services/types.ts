@@ -1,5 +1,5 @@
 export interface ImagePost {
-  post_id: string;
+  post_id?: string;
   board: string | null;
   timestamp: string;
   poster: string;
