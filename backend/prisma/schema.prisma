@@ -30,6 +30,7 @@ model Content {
   greentext String[] // Array of greentext lines
   text      String[] // Array of regular text lines
   post      Post? // One-to-one relation with Post
+  embedding Float[] // Vector embedding for the combined text
 
   // Full-text search indexes (if using PostgreSQL)
   @@index([greentext])

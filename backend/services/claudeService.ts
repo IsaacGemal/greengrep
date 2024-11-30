@@ -117,9 +117,6 @@ export async function analyzeImage(
 
     const analysis = JSON.parse(response) as ImageAnalysis;
 
-    // Generate embeddings for the analysis
-    await generateEmbeddings(analysis);
-
     return analysis;
   } catch (error) {
     console.error("Error analyzing image with Claude:", error);
