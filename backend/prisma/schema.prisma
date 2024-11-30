@@ -11,10 +11,10 @@ datasource db {
 
 model Post {
   id        String   @id @default(cuid())
-  post_id   String   @unique // Original post ID from the source
-  board     String? // Optional board name
+  post_id   String?  @unique // Make post_id optional
+  board     String?
   timestamp DateTime
-  poster    String // Usually "Anonymous" but keeping it flexible
+  poster    String   @default("Anonymous")
   is_nsfw   Boolean  @default(false)
   content   Content  @relation(fields: [contentId], references: [id])
   contentId String   @unique
