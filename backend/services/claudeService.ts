@@ -1,4 +1,5 @@
 import { Anthropic } from "@anthropic-ai/sdk";
+import { generateEmbeddings } from "./openaiService";
 
 // Initialize Claude client
 const anthropic = new Anthropic({
@@ -51,13 +52,14 @@ export async function analyzeImage(
       format.toLowerCase() === "jpeg" || format.toLowerCase() === "image/jpeg"
         ? "image/jpeg"
         : format.toLowerCase() === "png" || format.toLowerCase() === "image/png"
-        ? "image/png"
-        : format.toLowerCase() === "gif" || format.toLowerCase() === "image/gif"
-        ? "image/gif"
-        : format.toLowerCase() === "webp" ||
-          format.toLowerCase() === "image/webp"
-        ? "image/webp"
-        : "image/jpeg";
+          ? "image/png"
+          : format.toLowerCase() === "gif" ||
+              format.toLowerCase() === "image/gif"
+            ? "image/gif"
+            : format.toLowerCase() === "webp" ||
+                format.toLowerCase() === "image/webp"
+              ? "image/webp"
+              : "image/jpeg";
 
     const message = await anthropic.messages.create({
       model: "claude-3-5-sonnet-20241022",
@@ -113,7 +115,12 @@ export async function analyzeImage(
       message.content[0].type === "text" ? message.content[0].text : "";
     console.log("Claude Analysis:", response);
 
-    return JSON.parse(response) as ImageAnalysis;
+    const analysis = JSON.parse(response) as ImageAnalysis;
+
+    // Generate embeddings for the analysis
+    await generateEmbeddings(analysis);
+
+    return analysis;
   } catch (error) {
     console.error("Error analyzing image with Claude:", error);
     throw error;
