@@ -1,7 +1,8 @@
 import { Search } from 'lucide-react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { api, S3File } from '../services/api'
+import LoadingTrigger from '../components/LoadingTrigger'
 
 function SearchResults() {
     const [searchParams] = useSearchParams()
@@ -10,22 +11,41 @@ function SearchResults() {
     const [files, setFiles] = useState<S3File[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [cursor, setCursor] = useState<string | undefined>()
+    const [hasMore, setHasMore] = useState(true)
+    const [isLoadingMore, setIsLoadingMore] = useState(false)
+
+    const loadFiles = useCallback(async (newCursor?: string) => {
+        try {
+            setIsLoadingMore(true)
+            const response = await api.getFiles(newCursor)
+
+            if (newCursor) {
+                setFiles(prev => [...prev, ...response.files])
+            } else {
+                setFiles(response.files)
+            }
+
+            setCursor(response.nextCursor)
+            setHasMore(response.hasMore)
+        } catch (err) {
+            setError('Failed to fetch images')
+            console.error(err)
+        } finally {
+            setIsLoadingMore(false)
+            setLoading(false)
+        }
+    }, [])
 
     useEffect(() => {
-        const fetchFiles = async () => {
-            try {
-                const files = await api.getFiles()
-                setFiles(files)
-            } catch (err) {
-                setError('Failed to fetch images')
-                console.error(err)
-            } finally {
-                setLoading(false)
-            }
-        }
+        loadFiles()
+    }, [loadFiles])
 
-        fetchFiles()
-    }, [])
+    const handleLoadMore = useCallback(() => {
+        if (!isLoadingMore && hasMore) {
+            loadFiles(cursor)
+        }
+    }, [cursor, hasMore, isLoadingMore, loadFiles])
 
     const handleSearch = () => {
         if (searchQuery.trim()) {
@@ -106,6 +126,19 @@ function SearchResults() {
                         </Link>
                     ))}
                 </div>
+
+                {/* Loading Trigger */}
+                <LoadingTrigger
+                    onIntersect={handleLoadMore}
+                    enabled={hasMore && !isLoadingMore}
+                />
+
+                {/* Loading indicator */}
+                {isLoadingMore && (
+                    <div className="text-center py-4 text-[#008000]">
+                        Loading more...
+                    </div>
+                )}
             </main>
 
             {/* Footer */}

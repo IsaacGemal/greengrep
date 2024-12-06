@@ -12,7 +12,7 @@ function ImageDetails() {
         const fetchFile = async () => {
             try {
                 const files = await api.getFiles();
-                const foundFile = files.find(f => f.key === key);
+                const foundFile = files.files.find((f: S3File) => f.key === key);
                 if (foundFile) {
                     setFile(foundFile);
                 } else {

@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { S3 } from "@aws-sdk/client-s3";
+import { S3, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import multer from "multer";
 import multerS3 from "multer-s3";
 import { analyzeImage } from "./services/claudeService";
@@ -39,17 +39,30 @@ app.get("/api/health", (req, res) => {
 // curl -X GET http://localhost:3001/api/files
 app.get("/api/files", async (req, res) => {
   try {
-    const objects = await s3.listObjects({ Bucket: BUCKET_NAME });
+    const limit = parseInt(req.query.limit as string) || 20;
+    const cursor = req.query.cursor as string;
+
+    const command = new ListObjectsV2Command({
+      Bucket: BUCKET_NAME,
+      MaxKeys: limit,
+      ContinuationToken: cursor || undefined,
+    });
+
+    const response = await s3.send(command);
 
     const files =
-      objects.Contents?.map((object) => ({
+      response.Contents?.map((object) => ({
         key: object.Key,
         lastModified: object.LastModified,
         size: object.Size,
         url: `https://${BUCKET_NAME}.s3.amazonaws.com/${object.Key}`,
       })) || [];
 
-    res.json({ files });
+    res.json({
+      files,
+      nextCursor: response.NextContinuationToken,
+      hasMore: response.IsTruncated,
+    });
   } catch (error) {
     console.error("List files error:", error);
     res.status(500).json({ error: "Failed to list files" });

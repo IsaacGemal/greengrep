@@ -11,7 +11,7 @@ datasource db {
 
 model Post {
   id        String   @id @default(cuid())
-  post_id   String?  @unique // Make post_id optional
+  post_id   String?
   board     String?
   timestamp DateTime
   poster    String   @default("Anonymous")
@@ -30,6 +30,7 @@ model Content {
   greentext String[] // Array of greentext lines
   text      String[] // Array of regular text lines
   post      Post? // One-to-one relation with Post
+  embedding Float[] // Vector embedding for the combined text
 
   // Full-text search indexes (if using PostgreSQL)
   @@index([greentext])

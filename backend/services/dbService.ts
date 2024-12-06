@@ -1,16 +1,21 @@
 import { PrismaClient } from "@prisma/client";
 import type { ImageAnalysis } from "./types";
+import { generateEmbeddings } from "./openaiService";
 
 const prisma = new PrismaClient();
 
 export async function storeAnalysis(analysis: ImageAnalysis) {
+  // Get embeddings first
+  const embeddings = await generateEmbeddings(analysis);
+
   const posts = await Promise.all(
-    analysis.posts.map(async (post) => {
-      // Create or connect the Content
+    analysis.posts.map(async (post, index) => {
+      // Create or connect the Content with embedding
       const content = await prisma.content.create({
         data: {
           greentext: post.content.greentext,
           text: post.content.text,
+          embedding: embeddings[index].embedding, // Store the embedding
         },
       });
 
