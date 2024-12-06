@@ -3,6 +3,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useCallback } from 'react'
 import { api, S3File } from '../services/api'
 import LoadingTrigger from '../components/LoadingTrigger'
+import Masonry from 'react-masonry-css'
 
 function SearchResults() {
     const [searchParams] = useSearchParams()
@@ -14,6 +15,13 @@ function SearchResults() {
     const [cursor, setCursor] = useState<string | undefined>()
     const [hasMore, setHasMore] = useState(true)
     const [isLoadingMore, setIsLoadingMore] = useState(false)
+
+    const breakpointColumns = {
+        default: 4,
+        1100: 3,
+        700: 2,
+        500: 1
+    }
 
     const loadFiles = useCallback(async (newCursor?: string) => {
         try {
@@ -99,16 +107,18 @@ function SearchResults() {
                 </div>
 
                 {/* Results Grid - Updated to masonry-style layout */}
-                <div className="columns-1 md:columns-2 lg:columns-4 gap-6">
+                <Masonry
+                    breakpointCols={breakpointColumns}
+                    className="flex w-auto -ml-6"
+                    columnClassName="pl-6"
+                >
                     {files.map((file) => (
                         <Link
                             to={`/image/${encodeURIComponent(file.key)}`}
                             key={file.key}
-                            className="block mb-6 break-inside-avoid"
+                            className="block mb-6"
                         >
-                            <div
-                                className="bg-[#002f1f] border border-[#004d2f] rounded-lg overflow-hidden hover:border-[#00ff00] transition-colors duration-200"
-                            >
+                            <div className="bg-[#002f1f] border border-[#004d2f] rounded-lg overflow-hidden hover:border-[#00ff00] transition-colors duration-200">
                                 <img
                                     src={file.url}
                                     alt={file.key}
@@ -125,7 +135,7 @@ function SearchResults() {
                             </div>
                         </Link>
                     ))}
-                </div>
+                </Masonry>
 
                 {/* Loading Trigger */}
                 <LoadingTrigger
