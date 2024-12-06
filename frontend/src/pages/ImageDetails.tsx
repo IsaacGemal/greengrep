@@ -11,12 +11,27 @@ function ImageDetails() {
     useEffect(() => {
         const fetchFile = async () => {
             try {
-                const files = await api.getFiles();
-                const foundFile = files.files.find((f: S3File) => f.key === key);
-                if (foundFile) {
-                    setFile(foundFile);
-                } else {
-                    setError('Image not found');
+                setLoading(true);
+                // Keep fetching with pagination until we find the file
+                let currentCursor: string | undefined;
+                let found = false;
+
+                while (!found) {
+                    const response = await api.getFiles(currentCursor);
+                    const foundFile = response.files.find((f: S3File) => f.key === key);
+
+                    if (foundFile) {
+                        setFile(foundFile);
+                        found = true;
+                        break;
+                    }
+
+                    if (!response.hasMore || !response.nextCursor) {
+                        setError('Image not found');
+                        break;
+                    }
+
+                    currentCursor = response.nextCursor;
                 }
             } catch (err) {
                 setError('Failed to fetch image');
@@ -26,7 +41,9 @@ function ImageDetails() {
             }
         };
 
-        fetchFile();
+        if (key) {
+            fetchFile();
+        }
     }, [key]);
 
     if (loading) {
