@@ -17,6 +17,11 @@ export interface PaginatedResponse {
   hasMore: boolean;
 }
 
+interface SearchResponse {
+  query: string;
+  embedding: number[];
+}
+
 export const api = {
   async getFiles(
     cursor?: string,
@@ -45,5 +50,16 @@ export const api = {
     if (!response.ok) {
       throw new Error("Failed to upload file");
     }
+  },
+
+  async search(query: string): Promise<SearchResponse> {
+    const params = new URLSearchParams({ q: query });
+    const response = await fetch(`${API_BASE_URL}/search?${params}`);
+
+    if (!response.ok) {
+      throw new Error("Failed to perform search");
+    }
+
+    return await response.json();
   },
 };
