@@ -30,3 +30,13 @@ export async function generateEmbeddings(analysis: ImageAnalysis) {
   );
   return results;
 }
+
+export async function generateSearchEmbedding(searchQuery: string) {
+  const embedding = await openai.embeddings.create({
+    model: "text-embedding-3-small",
+    input: searchQuery,
+    encoding_format: "float",
+  });
+
+  return embedding.data[0].embedding;
+}

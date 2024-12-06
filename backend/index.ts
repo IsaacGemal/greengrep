@@ -5,6 +5,7 @@ import multer from "multer";
 import multerS3 from "multer-s3";
 import { analyzeImage } from "./services/claudeService";
 import { storeAnalysis } from "./services/dbService";
+import { generateSearchEmbedding } from "./services/openaiService";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -128,6 +129,31 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
     res.status(500).json({
       error: errorMessage,
     });
+  }
+});
+
+// Search endpoint
+app.get<
+  {},
+  { query: string; embedding: number[] } | { error: string },
+  undefined,
+  { q: string }
+>("/api/search", async (req, res) => {
+  try {
+    const { q: searchQuery } = req.query; // typed as string
+    if (!searchQuery) {
+      return res.status(400).json({ error: "Search query is required" });
+    }
+    const searchEmbedding = await generateSearchEmbedding(searchQuery);
+
+    // Typed response
+    res.json({
+      query: searchQuery,
+      embedding: searchEmbedding,
+    });
+  } catch (error) {
+    console.error("Search error:", error);
+    res.status(500).json({ error: "Failed to generate search embedding" });
   }
 });
 
