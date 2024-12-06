@@ -5,6 +5,7 @@ import multer from "multer";
 import multerS3 from "multer-s3";
 import { analyzeImage } from "./services/claudeService";
 import { storeAnalysis } from "./services/dbService";
+import { generateSearchEmbedding } from "./services/openaiService";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -22,7 +23,7 @@ const s3 = new S3({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
   },
-  logger: console,
+  // logger: console,
 });
 
 const BUCKET_NAME = "greengrep";
@@ -130,6 +131,33 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
     });
   }
 });
+
+// Search endpoint
+app.get("/api/search", (async (req: express.Request, res: express.Response) => {
+  try {
+    const searchQuery = req.query.q as string;
+    if (!searchQuery) {
+      return res.status(400).json({ error: "Search query is required" });
+    }
+    const searchEmbedding = await generateSearchEmbedding(searchQuery);
+
+    // Log first 5 numbers of the embedding
+    console.log("First 5 embedding values:", searchEmbedding.slice(0, 5));
+
+    res.json({
+      query: searchQuery,
+      embedding: searchEmbedding,
+    });
+  } catch (error) {
+    console.error("Search error:", error);
+    res.status(500).json({ error: "Failed to generate search embedding" });
+  }
+}) as express.RequestHandler<
+  Record<string, never>,
+  { query: string; embedding: number[] } | { error: string },
+  never,
+  { q: string }
+>);
 
 // Start server
 app.listen(PORT, () => {

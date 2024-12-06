@@ -49,6 +49,21 @@ function SearchResults() {
         loadFiles()
     }, [loadFiles])
 
+    useEffect(() => {
+        const performSearch = async () => {
+            if (searchQuery) {
+                try {
+                    await api.search(searchQuery);
+                } catch (error) {
+                    console.error('Search error:', error);
+                    setError('Failed to perform search');
+                }
+            }
+        };
+
+        performSearch();
+    }, [searchQuery]);
+
     const handleLoadMore = useCallback(() => {
         if (!isLoadingMore && hasMore) {
             loadFiles(cursor)
