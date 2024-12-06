@@ -11,14 +11,26 @@ export interface S3File {
   url: string;
 }
 
+export interface PaginatedResponse {
+  files: S3File[];
+  nextCursor?: string;
+  hasMore: boolean;
+}
+
 export const api = {
-  async getFiles(): Promise<S3File[]> {
-    const response = await fetch(`${API_BASE_URL}/files`);
+  async getFiles(
+    cursor?: string,
+    limit: number = 20
+  ): Promise<PaginatedResponse> {
+    const params = new URLSearchParams();
+    if (cursor) params.append("cursor", cursor);
+    params.append("limit", limit.toString());
+
+    const response = await fetch(`${API_BASE_URL}/files?${params}`);
     if (!response.ok) {
       throw new Error("Failed to fetch files");
     }
-    const data = await response.json();
-    return data.files;
+    return await response.json();
   },
 
   async uploadFile(file: File): Promise<void> {

@@ -10,21 +10,32 @@ function SearchResults() {
     const [files, setFiles] = useState<S3File[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [cursor, setCursor] = useState<string | undefined>()
+    const [hasMore, setHasMore] = useState(true)
+
+    const loadFiles = async (newCursor?: string) => {
+        try {
+            setLoading(true)
+            const response = await api.getFiles(newCursor)
+
+            if (newCursor) {
+                setFiles(prev => [...prev, ...response.files])
+            } else {
+                setFiles(response.files)
+            }
+
+            setCursor(response.nextCursor)
+            setHasMore(response.hasMore)
+        } catch (err) {
+            setError('Failed to fetch images')
+            console.error(err)
+        } finally {
+            setLoading(false)
+        }
+    }
 
     useEffect(() => {
-        const fetchFiles = async () => {
-            try {
-                const files = await api.getFiles()
-                setFiles(files)
-            } catch (err) {
-                setError('Failed to fetch images')
-                console.error(err)
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        fetchFiles()
+        loadFiles()
     }, [])
 
     const handleSearch = () => {
@@ -32,6 +43,20 @@ function SearchResults() {
             navigate(`/search?q=${encodeURIComponent(searchQuery)}`)
         }
     }
+
+    const loadMoreButton = (
+        <div className="flex justify-center mt-8 mb-4">
+            {hasMore && (
+                <button
+                    onClick={() => loadFiles(cursor)}
+                    disabled={loading}
+                    className="bg-[#004d2f] hover:bg-[#006d3f] text-[#00ff00] py-2 px-4 rounded-md transition-colors duration-200 disabled:opacity-50"
+                >
+                    {loading ? 'Loading...' : 'Load More'}
+                </button>
+            )}
+        </div>
+    )
 
     if (loading) {
         return <div className="min-h-screen bg-[#001f0f] text-[#00ff00] flex items-center justify-center">
@@ -106,6 +131,7 @@ function SearchResults() {
                         </Link>
                     ))}
                 </div>
+                {loadMoreButton}
             </main>
 
             {/* Footer */}

@@ -1,5 +1,4 @@
 import { Anthropic } from "@anthropic-ai/sdk";
-import { generateEmbeddings } from "./openaiService";
 
 // Initialize Claude client
 const anthropic = new Anthropic({
