@@ -1,7 +1,8 @@
 import { Search } from 'lucide-react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { api, S3File } from '../services/api'
+import LoadingTrigger from '../components/LoadingTrigger'
 
 function SearchResults() {
     const [searchParams] = useSearchParams()
@@ -12,10 +13,11 @@ function SearchResults() {
     const [error, setError] = useState<string | null>(null)
     const [cursor, setCursor] = useState<string | undefined>()
     const [hasMore, setHasMore] = useState(true)
+    const [isLoadingMore, setIsLoadingMore] = useState(false)
 
-    const loadFiles = async (newCursor?: string) => {
+    const loadFiles = useCallback(async (newCursor?: string) => {
         try {
-            setLoading(true)
+            setIsLoadingMore(true)
             const response = await api.getFiles(newCursor)
 
             if (newCursor) {
@@ -30,33 +32,26 @@ function SearchResults() {
             setError('Failed to fetch images')
             console.error(err)
         } finally {
+            setIsLoadingMore(false)
             setLoading(false)
         }
-    }
+    }, [])
 
     useEffect(() => {
         loadFiles()
-    }, [])
+    }, [loadFiles])
+
+    const handleLoadMore = useCallback(() => {
+        if (!isLoadingMore && hasMore) {
+            loadFiles(cursor)
+        }
+    }, [cursor, hasMore, isLoadingMore, loadFiles])
 
     const handleSearch = () => {
         if (searchQuery.trim()) {
             navigate(`/search?q=${encodeURIComponent(searchQuery)}`)
         }
     }
-
-    const loadMoreButton = (
-        <div className="flex justify-center mt-8 mb-4">
-            {hasMore && (
-                <button
-                    onClick={() => loadFiles(cursor)}
-                    disabled={loading}
-                    className="bg-[#004d2f] hover:bg-[#006d3f] text-[#00ff00] py-2 px-4 rounded-md transition-colors duration-200 disabled:opacity-50"
-                >
-                    {loading ? 'Loading...' : 'Load More'}
-                </button>
-            )}
-        </div>
-    )
 
     if (loading) {
         return <div className="min-h-screen bg-[#001f0f] text-[#00ff00] flex items-center justify-center">
@@ -131,7 +126,19 @@ function SearchResults() {
                         </Link>
                     ))}
                 </div>
-                {loadMoreButton}
+
+                {/* Loading Trigger */}
+                <LoadingTrigger
+                    onIntersect={handleLoadMore}
+                    enabled={hasMore && !isLoadingMore}
+                />
+
+                {/* Loading indicator */}
+                {isLoadingMore && (
+                    <div className="text-center py-4 text-[#008000]">
+                        Loading more...
+                    </div>
+                )}
             </main>
 
             {/* Footer */}
