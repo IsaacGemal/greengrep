@@ -64,16 +64,12 @@ export async function storeAnalysis(analysis: ImageAnalysis) {
 
 export default async function searchPosts(searchEmbedding: number[]) {
   try {
-    // Perform vector similarity search using cosine similarity
     const results = await prisma.$queryRaw`
       SELECT 
-        p.*,
-        c.*,
-        i.*,
+        p.url,
         1 - (c.embedding::vector <#> ${searchEmbedding}::vector) as similarity
       FROM "Content" c
       JOIN "Post" p ON p."contentId" = c.id
-      LEFT JOIN "Image" i ON p."imageId" = i.id
       WHERE 1 - (c.embedding::vector <#> ${searchEmbedding}::vector) > 0.7
       ORDER BY similarity DESC
       LIMIT 20;
