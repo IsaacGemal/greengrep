@@ -8,6 +8,13 @@ import { storeAnalysis } from "./services/dbService";
 import { generateSearchEmbedding } from "./services/openaiService";
 import searchPosts from "./services/dbService";
 
+interface SearchResult {
+  id: string;
+  analysis: string;
+  similarity: number;
+  created_at: Date;
+}
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -194,7 +201,8 @@ app.get("/api/vector-search", (async (
   }
 }) as express.RequestHandler<
   Record<string, never>,
-  { query: string; results: any; embedding: number[] } | { error: string },
+  | { query: string; results: SearchResult[]; embedding: number[] }
+  | { error: string },
   never,
   { q: string }
 >);
