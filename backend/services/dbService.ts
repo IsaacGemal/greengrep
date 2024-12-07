@@ -41,6 +41,7 @@ export async function storeAnalysis(analysis: ImageAnalysis) {
           timestamp: new Date(post.timestamp),
           poster: post.poster || "Anonymous",
           is_nsfw: post.is_nsfw || false,
+          url: post.url,
           content: {
             connect: { id: content.id },
           },
@@ -59,4 +60,24 @@ export async function storeAnalysis(analysis: ImageAnalysis) {
   );
 
   return posts;
+}
+
+export default async function searchPosts(searchEmbedding: number[]) {
+  try {
+    const results = await prisma.$queryRaw`
+      SELECT 
+        p.url,
+        1 - (c.embedding::vector <#> ${searchEmbedding}::vector) as similarity
+      FROM "Content" c
+      JOIN "Post" p ON p."contentId" = c.id
+      WHERE 1 - (c.embedding::vector <#> ${searchEmbedding}::vector) > 0.7
+      ORDER BY similarity DESC
+      LIMIT 20;
+    `;
+
+    return results;
+  } catch (error) {
+    console.error("Search error:", error);
+    throw error;
+  }
 }

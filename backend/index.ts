@@ -6,6 +6,14 @@ import multerS3 from "multer-s3";
 import { analyzeImage } from "./services/claudeService";
 import { storeAnalysis } from "./services/dbService";
 import { generateSearchEmbedding } from "./services/openaiService";
+import searchPosts from "./services/dbService";
+
+interface SearchResult {
+  id: string;
+  analysis: string;
+  similarity: number;
+  created_at: Date;
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -133,6 +141,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 });
 
 // Search endpoint
+// We will keep the original one for later
 app.get("/api/search", (async (req: express.Request, res: express.Response) => {
   try {
     const searchQuery = req.query.q as string;
@@ -155,6 +164,45 @@ app.get("/api/search", (async (req: express.Request, res: express.Response) => {
 }) as express.RequestHandler<
   Record<string, never>,
   { query: string; embedding: number[] } | { error: string },
+  never,
+  { q: string }
+>);
+
+// Add new endpoint for vector similarity search
+// Don't want to mess up the original one for now
+app.get("/api/vector-search", (async (
+  req: express.Request,
+  res: express.Response
+) => {
+  const { q: searchQuery } = req.query;
+
+  if (!searchQuery || typeof searchQuery !== "string") {
+    return res.status(400).json({
+      error: "Search query is required",
+    });
+  }
+
+  try {
+    const embedding = await generateSearchEmbedding(searchQuery);
+    const results = await searchPosts(embedding);
+
+    res.json({
+      query: searchQuery,
+      results,
+      embedding,
+    });
+  } catch (error: Error | unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Search failed";
+    console.error("Vector search error:", error);
+    res.status(500).json({
+      error: errorMessage,
+    });
+  }
+}) as express.RequestHandler<
+  Record<string, never>,
+  | { query: string; results: SearchResult[]; embedding: number[] }
+  | { error: string },
   never,
   { q: string }
 >);

@@ -1,12 +1,14 @@
 // This is your Prisma schema file
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql" // You can change this to your preferred database
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
 }
 
 model Post {
@@ -16,6 +18,7 @@ model Post {
   timestamp DateTime
   poster    String   @default("Anonymous")
   is_nsfw   Boolean  @default(false)
+  url       String?
   content   Content  @relation(fields: [contentId], references: [id])
   contentId String   @unique
   image     Image?   @relation(fields: [imageId], references: [id])
@@ -30,7 +33,7 @@ model Content {
   greentext String[] // Array of greentext lines
   text      String[] // Array of regular text lines
   post      Post? // One-to-one relation with Post
-  embedding Float[] // Vector embedding for the combined text
+  embedding Float[] // OpenAI embeddings are 1536 dimensions
 
   // Full-text search indexes (if using PostgreSQL)
   @@index([greentext])
