@@ -41,6 +41,7 @@ export async function storeAnalysis(analysis: ImageAnalysis) {
           timestamp: new Date(post.timestamp),
           poster: post.poster || "Anonymous",
           is_nsfw: post.is_nsfw || false,
+          url: post.url,
           content: {
             connect: { id: content.id },
           },

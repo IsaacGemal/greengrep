@@ -18,6 +18,7 @@ model Post {
   timestamp DateTime
   poster    String   @default("Anonymous")
   is_nsfw   Boolean  @default(false)
+  url       String?
   content   Content  @relation(fields: [contentId], references: [id])
   contentId String   @unique
   image     Image?   @relation(fields: [imageId], references: [id])

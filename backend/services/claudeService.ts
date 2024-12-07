@@ -13,6 +13,7 @@ interface ImagePost {
   poster: string;
   has_image: boolean;
   is_nsfw: boolean;
+  url?: string;
   embedded_image?: {
     filename?: string;
     size?: string;
@@ -91,6 +92,7 @@ export async function analyzeImage(
                     "poster": "poster name",
                     "has_image": true,
                     "is_nsfw": true,
+                    "url": "${imageUrl}",
                     "embedded_image": {
                       "filename": "${filename}",
                       "size": "${size}",
@@ -115,6 +117,11 @@ export async function analyzeImage(
     console.log("Claude Analysis:", response);
 
     const analysis = JSON.parse(response) as ImageAnalysis;
+
+    // Add URL to the single post
+    if (analysis.posts[0]) {
+      analysis.posts[0].url = imageUrl;
+    }
 
     return analysis;
   } catch (error) {
