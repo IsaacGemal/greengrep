@@ -2,41 +2,72 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../services/api'
 import React from 'react'
+interface FileWithStatus {
+    file: File;
+    status: 'pending' | 'uploading' | 'success' | 'error';
+    error?: string;
+}
+
 function Upload() {
-    const [file, setFile] = useState<File | null>(null)
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
-    const [success, setSuccess] = useState(false)
+    const [files, setFiles] = useState<FileWithStatus[]>([])
+    const [isDragging, setIsDragging] = useState(false)
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setFile(e.target.files[0])
-            setError(null)
-            setSuccess(false)
+        if (e.target.files) {
+            const newFiles = Array.from(e.target.files).map(file => ({
+                file,
+                status: 'pending' as const
+            }))
+            setFiles(prev => [...prev, ...newFiles])
         }
     }
 
-    const handleUpload = async () => {
-        if (!file) {
-            setError('Please select a file first')
-            return
-        }
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault()
+        setIsDragging(true)
+    }
 
-        setLoading(true)
-        setError(null)
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault()
+        setIsDragging(false)
+    }
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault()
+        setIsDragging(false)
+
+        const droppedFiles = Array.from(e.dataTransfer.files)
+            .filter(file => file.type === 'image/jpeg' || file.type === 'image/png')
+            .map(file => ({
+                file,
+                status: 'pending' as const
+            }))
+
+        setFiles(prev => [...prev, ...droppedFiles])
+    }
+
+    const uploadFile = async (fileWithStatus: FileWithStatus, index: number) => {
+        setFiles(prev => prev.map((f, i) =>
+            i === index ? { ...f, status: 'uploading' } : f
+        ))
 
         try {
-            await api.uploadFile(file)
-            setSuccess(true)
-            setFile(null)
-            // Reset file input
-            const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
-            if (fileInput) fileInput.value = ''
+            await api.uploadFile(fileWithStatus.file)
+            setFiles(prev => prev.map((f, i) =>
+                i === index ? { ...f, status: 'success' } : f
+            ))
         } catch (err) {
-            setError('Failed to upload file')
+            setFiles(prev => prev.map((f, i) =>
+                i === index ? { ...f, status: 'error', error: 'Failed to upload file' } : f
+            ))
             console.error(err)
-        } finally {
-            setLoading(false)
+        }
+    }
+
+    const handleUploadAll = async () => {
+        const pendingFiles = files.filter(f => f.status === 'pending')
+        for (const file of pendingFiles) {
+            await uploadFile(file, files.indexOf(file))
         }
     }
 
@@ -57,13 +88,20 @@ function Upload() {
                 <div className="w-full max-w-xl space-y-6">
                     <h1 className="text-3xl font-bold text-center mb-8">Upload Greentext</h1>
 
-                    <div className="bg-[#002f1f] border-2 border-dashed border-[#004d2f] rounded-lg p-8 text-center">
+                    <div
+                        className={`bg-[#002f1f] border-2 border-dashed ${isDragging ? 'border-[#00ff00]' : 'border-[#004d2f]'
+                            } rounded-lg p-8 text-center transition-colors duration-200`}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                    >
                         <input
                             type="file"
                             onChange={handleFileChange}
                             className="hidden"
                             id="file-upload"
                             accept="image/jpeg,image/png"
+                            multiple
                         />
                         <label
                             htmlFor="file-upload"
@@ -73,29 +111,48 @@ function Upload() {
                                 <span className="text-3xl">+</span>
                             </div>
                             <span className="text-[#008000]">
-                                {file ? file.name : 'Choose a file or drag it here'}
+                                Drop files here or click to select
                             </span>
                         </label>
                     </div>
 
-                    {error && (
-                        <div className="text-red-500 text-center">{error}</div>
-                    )}
-
-                    {success && (
-                        <div className="text-[#00ff00] text-center">
-                            File uploaded successfully!
+                    {/* File List */}
+                    {files.length > 0 && (
+                        <div className="space-y-4">
+                            {files.map((fileWithStatus, index) => (
+                                <div
+                                    key={index}
+                                    className="bg-[#002f1f] p-4 rounded-lg flex items-center justify-between"
+                                >
+                                    <span className="text-[#008000] truncate">
+                                        {fileWithStatus.file.name}
+                                    </span>
+                                    <span className="ml-4 min-w-[100px] text-right">
+                                        {fileWithStatus.status === 'pending' && 'pending'}
+                                        {fileWithStatus.status === 'uploading' && (
+                                            <svg className="animate-spin h-5 w-5 text-[#00ff00] inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        )}
+                                        {fileWithStatus.status === 'success' && 'success'}
+                                        {fileWithStatus.status === 'error' && 'error'}
+                                    </span>
+                                </div>
+                            ))}
                         </div>
                     )}
 
-                    <button
-                        onClick={handleUpload}
-                        disabled={!file || loading}
-                        className={`w-full bg-[#004d2f] hover:bg-[#006d3f] text-[#00ff00] py-4 text-lg rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#00ff00] ${(!file || loading) && 'opacity-50 cursor-not-allowed'
-                            }`}
-                    >
-                        {loading ? 'Uploading...' : 'Upload File'}
-                    </button>
+                    {files.length > 0 && (
+                        <button
+                            onClick={handleUploadAll}
+                            disabled={files.every(f => f.status === 'success')}
+                            className={`w-full bg-[#004d2f] hover:bg-[#006d3f] text-[#00ff00] py-4 text-lg rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#00ff00] ${files.every(f => f.status === 'success') && 'opacity-50 cursor-not-allowed'
+                                }`}
+                        >
+                            Upload All Files
+                        </button>
+                    )}
                 </div>
             </main>
 
