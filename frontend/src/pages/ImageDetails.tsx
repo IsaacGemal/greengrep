@@ -1,62 +1,13 @@
-import { useParams, Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { api, S3File } from '../services/api';
+import { useParams, Link, useLocation } from 'react-router-dom';
+import { SearchResult } from '../services/api';
 
 function ImageDetails() {
     const { key } = useParams();
-    const [file, setFile] = useState<S3File | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        const fetchFile = async () => {
-            try {
-                setLoading(true);
-                // Keep fetching with pagination until we find the file
-                let currentCursor: string | undefined;
-                let found = false;
-
-                while (!found) {
-                    const response = await api.getFiles(currentCursor);
-                    const foundFile = response.files.find((f: S3File) => f.key === key);
-
-                    if (foundFile) {
-                        setFile(foundFile);
-                        found = true;
-                        break;
-                    }
-
-                    if (!response.hasMore || !response.nextCursor) {
-                        setError('Image not found');
-                        break;
-                    }
-
-                    currentCursor = response.nextCursor;
-                }
-            } catch (err) {
-                setError('Failed to fetch image');
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (key) {
-            fetchFile();
-        }
-    }, [key]);
-
-    if (loading) {
-        return <div className="min-h-screen bg-[#001f0f] text-[#00ff00] flex items-center justify-center">
-            Loading...
-        </div>
-    }
-
-    if (error || !file) {
-        return <div className="min-h-screen bg-[#001f0f] text-[#00ff00] flex items-center justify-center">
-            {error}
-        </div>
-    }
+    const location = useLocation();
+    const file = location.state?.file as SearchResult || {
+        url: `https://greengrep.s3.amazonaws.com/${key}`,
+        similarity: 0
+    };
 
     return (
         <div className="min-h-screen bg-[#001f0f] text-[#00ff00] flex flex-col">
@@ -73,15 +24,14 @@ function ImageDetails() {
                     <div className="flex justify-center">
                         <img
                             src={file.url}
-                            alt={file.key}
+                            alt={key}
                             className="max-w-[90vw] max-h-[70vh] object-contain bg-[#001f0f]"
                         />
                     </div>
                     <div className="p-6" style={{ width: 'min(90vw, 100%)' }}>
-                        <h1 className="text-2xl font-medium mb-4">{file.key}</h1>
+                        <h1 className="text-2xl font-medium mb-4">{key}</h1>
                         <div className="text-[#008000] space-y-2">
-                            <p>Size: {Math.round(file.size / 1024)} KB</p>
-                            <p>Last Modified: {new Date(file.lastModified).toLocaleString()}</p>
+                            <p>Similarity: {(file.similarity * 100).toFixed(2)}%</p>
                             <p>URL: <a href={file.url} target="_blank" rel="noopener noreferrer"
                                 className="text-[#00ff00] hover:text-[#7cfc00] transition-colors duration-200">
                                 View original

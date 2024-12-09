@@ -158,18 +158,23 @@ function SearchResults() {
                             key={index}
                             className="block mb-6"
                         >
-                            <div className="bg-[#002f1f] border border-[#004d2f] rounded-lg overflow-hidden hover:border-[#00ff00] transition-colors duration-200">
-                                <img
-                                    src={result.url}
-                                    alt={`Search result ${index + 1}`}
-                                    className="w-full h-auto"
-                                />
-                                <div className="p-4">
-                                    <p className="text-[#008000] text-sm">
-                                        Similarity: {(result.similarity * 100).toFixed(2)}%
-                                    </p>
+                            <Link
+                                to={`/image/${encodeURIComponent(result.url?.split('/').pop() || '')}`}
+                                state={{ file: result }}
+                            >
+                                <div className="bg-[#002f1f] border border-[#004d2f] rounded-lg overflow-hidden hover:border-[#00ff00] transition-colors duration-200">
+                                    <img
+                                        src={result.url}
+                                        alt={`Search result ${index + 1}`}
+                                        className="w-full h-auto"
+                                    />
+                                    <div className="p-4">
+                                        <p className="text-[#008000] text-sm">
+                                            Similarity: {(result.similarity * 100).toFixed(2)}%
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
+                            </Link>
                         </div>
                     ))}
                 </Masonry>
