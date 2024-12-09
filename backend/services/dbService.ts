@@ -70,7 +70,7 @@ export default async function searchPosts(searchEmbedding: number[]) {
         1 - (c.embedding::vector <#> ${searchEmbedding}::vector) as similarity
       FROM "Content" c
       JOIN "Post" p ON p."contentId" = c.id
-      WHERE 1 - (c.embedding::vector <#> ${searchEmbedding}::vector) > 0.7
+      WHERE (c.embedding::vector <#> ${searchEmbedding}::vector) < 0.3
       ORDER BY similarity DESC
       LIMIT 20;
     `;
