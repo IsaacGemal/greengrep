@@ -189,7 +189,6 @@ app.get("/api/vector-search", (async (
     res.json({
       query: searchQuery,
       results,
-      embedding,
     });
   } catch (error: Error | unknown) {
     const errorMessage =

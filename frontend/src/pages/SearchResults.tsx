@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { api, S3File } from '../services/api'
 import LoadingTrigger from '../components/LoadingTrigger'
 import Masonry from 'react-masonry-css'
+import debounce from 'lodash/debounce'
 
 function SearchResults() {
     const [searchParams] = useSearchParams()
@@ -49,20 +50,28 @@ function SearchResults() {
         loadFiles()
     }, [loadFiles])
 
-    useEffect(() => {
-        const performSearch = async () => {
-            if (searchQuery) {
+    const debouncedSearch = useCallback(
+        debounce(async (query: string) => {
+            if (query) {
                 try {
-                    await api.search(searchQuery);
+                    await api.search(query);
                 } catch (error) {
                     console.error('Search error:', error);
                     setError('Failed to perform search');
                 }
             }
-        };
+        }, 500),
+        []
+    );
 
-        performSearch();
-    }, [searchQuery]);
+    useEffect(() => {
+        debouncedSearch(searchQuery);
+
+        // Cleanup
+        return () => {
+            debouncedSearch.cancel();
+        };
+    }, [searchQuery, debouncedSearch]);
 
     const handleLoadMore = useCallback(() => {
         if (!isLoadingMore && hasMore) {
