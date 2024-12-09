@@ -36,13 +36,6 @@ const s3 = new S3({
 
 const BUCKET_NAME = "greengrep";
 
-// Health check endpoint
-// Example usage
-// curl -X GET http://localhost:3001/api/health
-app.get("/api/health", (req, res) => {
-  res.json({ status: "healthy", timestamp: new Date().toISOString() });
-});
-
 // List all files in bucket
 // Example usage
 // curl -X GET http://localhost:3001/api/files
@@ -140,36 +133,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
   }
 });
 
-// Search endpoint
-// We will keep the original one for later
-app.get("/api/search", (async (req: express.Request, res: express.Response) => {
-  try {
-    const searchQuery = req.query.q as string;
-    if (!searchQuery) {
-      return res.status(400).json({ error: "Search query is required" });
-    }
-    const searchEmbedding = await generateSearchEmbedding(searchQuery);
-
-    // Log first 5 numbers of the embedding
-    console.log("First 5 embedding values:", searchEmbedding.slice(0, 5));
-
-    res.json({
-      query: searchQuery,
-      embedding: searchEmbedding,
-    });
-  } catch (error) {
-    console.error("Search error:", error);
-    res.status(500).json({ error: "Failed to generate search embedding" });
-  }
-}) as express.RequestHandler<
-  Record<string, never>,
-  { query: string; embedding: number[] } | { error: string },
-  never,
-  { q: string }
->);
-
 // Add new endpoint for vector similarity search
-// Don't want to mess up the original one for now
 app.get("/api/vector-search", (async (
   req: express.Request,
   res: express.Response
