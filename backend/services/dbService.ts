@@ -67,10 +67,10 @@ export default async function searchPosts(searchEmbedding: number[]) {
     const results = await prisma.$queryRaw`
       SELECT 
         p.url,
-        (c.embedding::vector <=> ${searchEmbedding}::vector) as similarity
+        1 - (c.embedding::vector <#> ${searchEmbedding}::vector) as similarity
       FROM "Content" c
       JOIN "Post" p ON p."contentId" = c.id
-      WHERE (c.embedding::vector <=> ${searchEmbedding}::vector) > 0.7
+      WHERE (c.embedding::vector <#> ${searchEmbedding}::vector) < 0.3
       ORDER BY similarity DESC
       LIMIT 20;
     `;
