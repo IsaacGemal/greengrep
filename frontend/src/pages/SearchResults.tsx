@@ -1,5 +1,5 @@
 import { Search } from 'lucide-react'
-import { Link, useSearchParams, useNavigate } from 'react-router-dom'
+import { Link, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect, useCallback } from 'react'
 import { api } from '../services/api'
 import { SearchResult } from '../services/api'
@@ -9,10 +9,16 @@ import debounce from 'lodash/debounce'
 function SearchResults() {
     const [searchParams] = useSearchParams()
     const navigate = useNavigate()
+    const location = useLocation()
+
+    // Initialize state from location state if available
     const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '')
-    const [results, setResults] = useState<SearchResult[]>([])
-    const [loading, setLoading] = useState(true)
+    const [results, setResults] = useState<SearchResult[]>(location.state?.results || [])
+    const [loading, setLoading] = useState(!location.state?.results)
     const [error, setError] = useState<string | null>(null)
+    const [lastExecutedQuery, setLastExecutedQuery] = useState<string | null>(
+        location.state?.lastExecutedQuery || null
+    )
 
     const breakpointColumns = {
         default: 4,
@@ -23,26 +29,37 @@ function SearchResults() {
 
     const debouncedSearch = useCallback(
         debounce(async (query: string) => {
-            if (query) {
+            if (query && query !== lastExecutedQuery) {
                 try {
                     setLoading(true);
                     const response = await api.search(query);
                     setResults(response.results);
+                    setLastExecutedQuery(query);
+
+                    // Update location state to preserve results
+                    navigate(`/search?q=${encodeURIComponent(query)}`, {
+                        replace: true,
+                        state: {
+                            results: response.results,
+                            lastExecutedQuery: query
+                        }
+                    });
                 } catch (error) {
                     console.error('Search error:', error);
                     setError('Failed to perform search');
                 } finally {
                     setLoading(false);
                 }
+            } else if (query === lastExecutedQuery) {
+                setLoading(false);
             }
         }, 500),
-        []
+        [lastExecutedQuery, navigate]
     );
 
     useEffect(() => {
         debouncedSearch(searchQuery);
 
-        // Cleanup function to cancel pending debounced calls
         return () => {
             debouncedSearch.cancel();
         };

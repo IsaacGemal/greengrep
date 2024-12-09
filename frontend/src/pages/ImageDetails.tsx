@@ -13,7 +13,11 @@ function ImageDetails() {
         <div className="min-h-screen bg-[#001f0f] text-[#00ff00] flex flex-col">
             {/* Header */}
             <header className="flex items-center p-4 border-b border-[#004d2f]">
-                <Link to="/search" className="text-[#00ff00] hover:text-[#7cfc00] transition-colors duration-200">
+                <Link
+                    to="/search"
+                    state={location.state}
+                    className="text-[#00ff00] hover:text-[#7cfc00] transition-colors duration-200"
+                >
                     ← Back to results
                 </Link>
             </header>
