@@ -17,9 +17,14 @@ export interface PaginatedResponse {
   hasMore: boolean;
 }
 
-interface SearchResponse {
+export interface SearchResult {
+  url: string;
+  similarity: number;
+}
+
+export interface SearchResponse {
   query: string;
-  embedding: number[];
+  results: SearchResult[];
 }
 
 export const api = {
@@ -54,7 +59,7 @@ export const api = {
 
   async search(query: string): Promise<SearchResponse> {
     const params = new URLSearchParams({ q: query });
-    const response = await fetch(`${API_BASE_URL}/search?${params}`);
+    const response = await fetch(`${API_BASE_URL}/vector-search?${params}`);
 
     if (!response.ok) {
       throw new Error("Failed to perform search");
