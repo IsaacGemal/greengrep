@@ -62,7 +62,8 @@ export const api = {
     const response = await fetch(`${API_BASE_URL}/vector-search?${params}`);
 
     if (!response.ok) {
-      throw new Error("Failed to perform search");
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to perform search");
     }
 
     return await response.json();
