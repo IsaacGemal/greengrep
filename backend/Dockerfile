@@ -35,7 +35,7 @@ FROM oven/bun:1-slim
 
 WORKDIR /app
 
-# Install OpenSSL in production stage
+# Install OpenSSL in production stage - this is needed because of Prisma
 RUN apt-get update -y && apt-get install -y openssl
 
 # Copy built executable and necessary files
