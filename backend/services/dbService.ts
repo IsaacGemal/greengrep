@@ -5,68 +5,80 @@ import { generateEmbeddings } from "./openaiService";
 const prisma = new PrismaClient();
 
 export async function storeAnalysis(analysis: ImageAnalysis) {
-  // Get embeddings first
   const embeddings = await generateEmbeddings(analysis);
 
-  const posts = await Promise.all(
+  const posts = await Promise.allSettled(
     analysis.posts.map(async (post, index) => {
-      // Create or connect the Content with embedding
-      const content = await prisma.content.create({
-        data: {
-          greentext: post.content.greentext,
-          text: post.content.text,
-          embedding: embeddings[index].embedding, // Store the embedding
-        },
-      });
-
-      // Create Image if it exists
-      let image = null;
-      if (post.embedded_image) {
-        image = await prisma.image.create({
+      try {
+        const content = await prisma.content.create({
           data: {
-            filename: post.embedded_image.filename,
-            size: post.embedded_image.size,
-            format: post.embedded_image.format,
-            dimensions: post.embedded_image.dimensions,
-            description: post.embedded_image.description,
+            greentext: post.content.greentext,
+            text: post.content.text,
+            embedding: embeddings[index].embedding,
           },
         });
-      }
 
-      // Create the Post with optional post_id
-      return await prisma.post.create({
-        data: {
-          post_id: post.post_id || null,
-          board: post.board,
-          timestamp: new Date(post.timestamp),
-          poster: post.poster || "Anonymous",
-          is_nsfw: post.is_nsfw || false,
-          url: post.url,
-          content: {
-            connect: { id: content.id },
+        // Create Image if it exists
+        let image = null;
+        if (post.embedded_image) {
+          image = await prisma.image.create({
+            data: {
+              filename: post.embedded_image.filename,
+              size: post.embedded_image.size,
+              format: post.embedded_image.format,
+              dimensions: post.embedded_image.dimensions,
+              description: post.embedded_image.description,
+            },
+          });
+        }
+
+        // Create the Post with optional post_id
+        return await prisma.post.create({
+          data: {
+            post_id: post.post_id || null,
+            board: post.board,
+            timestamp: new Date(post.timestamp),
+            poster: post.poster || "Anonymous",
+            is_nsfw: post.is_nsfw || false,
+            url: post.url,
+            content: {
+              connect: { id: content.id },
+            },
+            image: image
+              ? {
+                  connect: { id: image.id },
+                }
+              : undefined,
           },
-          image: image
-            ? {
-                connect: { id: image.id },
-              }
-            : undefined,
-        },
-        include: {
-          content: true,
-          image: true,
-        },
-      });
+          include: {
+            content: true,
+            image: true,
+          },
+        });
+      } catch (error) {
+        console.error(`Failed to store post: ${error}`);
+        throw error;
+      }
     })
   );
 
-  return posts;
+  // Filter out rejected promises and return successful posts
+  return posts
+    .filter(
+      (result): result is PromiseFulfilledResult<any> =>
+        result.status === "fulfilled"
+    )
+    .map((result) => result.value);
 }
 
 export default async function searchPosts(searchEmbedding: number[]) {
   try {
-    const results = await prisma.$queryRaw`
+    return await prisma.$queryRaw`
       SELECT 
+        p.id,
         p.url,
+        c.text,
+        c.greentext,
         1 - (c.embedding::vector <#> ${searchEmbedding}::vector) as similarity
       FROM "Content" c
       JOIN "Post" p ON p."contentId" = c.id
@@ -74,10 +86,11 @@ export default async function searchPosts(searchEmbedding: number[]) {
       ORDER BY similarity DESC
       LIMIT 20;
     `;
-
-    return results;
   } catch (error) {
-    console.error("Search error:", error);
-    throw error;
+    console.error(
+      "Search error:",
+      error instanceof Error ? error.message : error
+    );
+    throw new Error("Failed to perform vector search");
   }
 }
