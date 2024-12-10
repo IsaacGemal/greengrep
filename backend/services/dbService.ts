@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import type { Post, Content, Image } from "@prisma/client";
 import type { ImageAnalysis } from "./types";
 import { generateEmbeddings } from "./openaiService";
 
@@ -65,8 +66,14 @@ export async function storeAnalysis(analysis: ImageAnalysis) {
   // Filter out rejected promises and return successful posts
   return posts
     .filter(
-      (result): result is PromiseFulfilledResult<any> =>
-        result.status === "fulfilled"
+      (
+        result
+      ): result is PromiseFulfilledResult<
+        Post & {
+          content: Content;
+          image: Image | null;
+        }
+      > => result.status === "fulfilled"
     )
     .map((result) => result.value);
 }
