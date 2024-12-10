@@ -5,7 +5,7 @@
   "scripts": {
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
-    "build": "tsc --build",
+    "build": "bun build --compile --minify --target bun --outfile ./dist/server ./index.ts",
     "test": "bun test"
   },
   "devDependencies": {
@@ -29,6 +29,7 @@
     "@anthropic-ai/sdk": "^0.32.1",
     "@aws-sdk/client-s3": "^3.701.0",
     "@elysiajs/cors": "^1.1.1",
+    "@elysiajs/swagger": "^1.1.6",
     "@prisma/client": "^6.0.0",
     "cors": "^2.8.5",
     "express": "^4.21.2",

@@ -5,6 +5,7 @@ import { analyzeImage } from "./services/claudeService";
 import { storeAnalysis } from "./services/dbService";
 import { generateSearchEmbedding } from "./services/openaiService";
 import searchPosts from "./services/dbService";
+import { swagger } from "@elysiajs/swagger";
 
 const BUCKET_NAME = process.env.BUCKET_NAME || "greengrep";
 const AWS_REGION = process.env.AWS_REGION || "us-east-1";
@@ -20,6 +21,7 @@ const s3 = new S3({
 });
 
 const app = new Elysia()
+  .use(swagger())
   .use(cors())
   // Global error handler: log the error and respond with a generic message
   .onError(({ error }) => {
