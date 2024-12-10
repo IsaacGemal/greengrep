@@ -27,7 +27,7 @@ RUN bun build \
     --compile \
     --minify \
     --target bun \
-    --outfile server \
+    --outfile dist/server \
     ./index.ts
 
 # Production stage
@@ -39,7 +39,7 @@ WORKDIR /app
 RUN apt-get update -y && apt-get install -y openssl
 
 # Copy built executable and necessary files
-COPY --from=build /app/server ./server
+COPY --from=build /app/dist/server ./server
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 

@@ -5,7 +5,7 @@
   "scripts": {
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
-    "build": "tsc --build",
+    "build": "bun build --compile --minify --target bun --outfile ./dist/server ./index.ts",
     "test": "bun test"
   },
   "devDependencies": {
