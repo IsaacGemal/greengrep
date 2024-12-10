@@ -6,7 +6,6 @@ import { storeAnalysis } from "./services/dbService";
 import { generateSearchEmbedding } from "./services/openaiService";
 import searchPosts from "./services/dbService";
 
-const PORT = Number(process.env.PORT) || 3001;
 const BUCKET_NAME = process.env.BUCKET_NAME || "greengrep";
 const AWS_REGION = process.env.AWS_REGION || "us-east-1";
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID || "";
@@ -145,6 +144,6 @@ app.get("/api/vector-search", async ({ query, error }) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`🦊 Elysia is running on http://localhost:${PORT}`);
+app.listen(process.env.PORT || 3000, () => {
+  console.log(`🦊 Server is running on port ${process.env.PORT || 3000}`);
 });
