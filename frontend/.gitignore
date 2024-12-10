@@ -26,3 +26,4 @@ dist-ssr
 examples
 .env
 .env.production
+.vercel
