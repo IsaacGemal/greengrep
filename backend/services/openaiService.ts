@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { getCachedEmbedding, setCachedEmbedding } from "./redisService";
 import type { ImageAnalysis } from "./types";
 
 const openai = new OpenAI({
@@ -34,13 +35,27 @@ export async function generateEmbeddings(analysis: ImageAnalysis) {
 
 export async function generateSearchEmbedding(searchQuery: string) {
   try {
+    // Check embedding cache first
+    const cachedEmbedding = await getCachedEmbedding(searchQuery);
+    if (cachedEmbedding) {
+      console.log("Embedding cache hit for:", searchQuery);
+      return cachedEmbedding;
+    }
+
+    console.log("Embedding cache miss for:", searchQuery);
+    // Generate new embedding if not cached
     const { data } = await openai.embeddings.create({
       model: "text-embedding-3-small",
       input: searchQuery,
       encoding_format: "float",
     });
 
-    return data[0].embedding;
+    const embedding = data[0].embedding;
+
+    // Cache the embedding
+    await setCachedEmbedding(searchQuery, embedding);
+
+    return embedding;
   } catch (error) {
     console.error("Search embedding generation failed:", error);
     throw new Error("Failed to generate search embedding");
