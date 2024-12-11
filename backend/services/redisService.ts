@@ -1,12 +1,13 @@
 import Redis from "ioredis";
 
-const redis = new Redis({
-  host: process.env.REDIS_HOST || "localhost",
-  port: parseInt(process.env.REDIS_PORT || "6379"),
-});
+if (!process.env.REDIS_URL) {
+  throw new Error("REDIS_URL environment variable is required");
+}
+
+const redis = new Redis(process.env.REDIS_URL);
 
 // Short TTL for search results (5 minutes)
-// As this platform grows, we'll want to cache longer, but for testing it's fine if it's short
+// As this platform grows, we'll want to cache longer, but for testing purposes it's fine if it's short
 const SEARCH_RESULTS_TTL = 5 * 60;
 
 // Long TTL for embeddings (1 week)
