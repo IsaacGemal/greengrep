@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Circular background -->
+  <circle cx="50" cy="50" r="50" fill="#004d2f" stroke="none"/>
+  
+  <!-- Bright green arrow (>) symbol -->
+  <path d="M30 20 L70 50 L30 80" fill="none" stroke="#00ff00" stroke-width="8" stroke-linecap="miter" stroke-linejoin="butt"/>
+</svg>
