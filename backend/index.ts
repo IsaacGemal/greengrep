@@ -6,6 +6,11 @@ import { storeAnalysis } from "./services/dbService";
 import { generateSearchEmbedding } from "./services/openaiService";
 import searchPosts from "./services/dbService";
 import { swagger } from "@elysiajs/swagger";
+import {
+  getCachedSearch,
+  setCachedSearch,
+  type SearchResult,
+} from "./services/redisService";
 
 const BUCKET_NAME = process.env.BUCKET_NAME || "greengrep";
 const AWS_REGION = process.env.AWS_REGION || "us-east-1";
@@ -126,26 +131,60 @@ app.post(
 );
 
 // Vector similarity search
-app.get("/api/vector-search", async ({ query, error }) => {
-  const searchQuery = query.q;
-  if (!searchQuery) {
-    return error(400, { error: "Search query is required" });
+app.get(
+  "/api/vector-search",
+  async ({ query, error }) => {
+    const searchQuery = query.q;
+    if (!searchQuery) {
+      return error(400, { error: "Search query is required" });
+    }
+
+    try {
+      // Check cache first
+      const cachedResults = await getCachedSearch(searchQuery);
+      if (cachedResults) {
+        console.log("Cache hit for query:", searchQuery);
+        return {
+          query: searchQuery,
+          results: cachedResults as SearchResult[],
+          cached: true,
+        };
+      }
+
+      console.log("Cache miss for query:", searchQuery);
+      // If not in cache, perform the search
+      const embedding = await generateSearchEmbedding(searchQuery);
+      const results = (await searchPosts(embedding)) as SearchResult[];
+
+      // Cache the results
+      await setCachedSearch(searchQuery, results);
+
+      return {
+        query: searchQuery,
+        results,
+        cached: false,
+      };
+    } catch (err) {
+      console.error("Vector search error:", err);
+      return error(500, { error: "Search failed" });
+    }
+  },
+  {
+    // Add query parameter definition for Swagger
+    query: t.Object({
+      q: t.String({
+        description: "Search query term",
+        required: true,
+      }),
+    }),
   }
+);
 
-  try {
-    const embedding = await generateSearchEmbedding(searchQuery);
-    const results = await searchPosts(embedding);
-
-    return {
-      query: searchQuery,
-      results,
-    };
-  } catch (err) {
-    console.error("Vector search error:", err);
-    return error(500, { error: "Search failed" });
+app.listen(
+  {
+    port: process.env.PORT || 3000,
+  },
+  () => {
+    console.log(`🦊 Server is running on port ${process.env.PORT || 3000}`);
   }
-});
-
-app.listen(process.env.PORT || 3000, () => {
-  console.log(`🦊 Server is running on port ${process.env.PORT || 3000}`);
-});
+);
