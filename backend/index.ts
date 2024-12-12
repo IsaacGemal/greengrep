@@ -1,4 +1,4 @@
-import { Elysia, t } from "elysia";
+import { Elysia, error, t } from "elysia";
 import { cors } from "@elysiajs/cors";
 import { S3, ListObjectsV2Command, PutObjectCommand } from "@aws-sdk/client-s3";
 import { analyzeImage } from "./services/claudeService";
@@ -11,6 +11,7 @@ import {
   setCachedSearch,
   type SearchResult,
 } from "./services/redisService";
+import { getRandomPosts } from "./services/dbService";
 
 const BUCKET_NAME = process.env.BUCKET_NAME || "greengrep";
 const AWS_REGION = process.env.AWS_REGION || "us-east-1";
@@ -176,6 +177,38 @@ app.get(
         description: "Search query term",
         required: true,
       }),
+    }),
+  }
+);
+
+// Add this new endpoint
+app.get(
+  "/api/random",
+  async ({ query }) => {
+    try {
+      const limit = query.limit ?? 20;
+      const results = await getRandomPosts(limit);
+
+      return {
+        results,
+        count: results.length,
+      };
+    } catch (err) {
+      console.error("Random posts error:", err);
+      return error(500, { error: "Failed to fetch random posts" });
+    }
+  },
+  {
+    // Add query parameter definition for Swagger
+    query: t.Object({
+      limit: t.Optional(
+        t.Numeric({
+          description: "Number of random posts to return",
+          minimum: 1,
+          maximum: 100,
+          default: 20,
+        })
+      ),
     }),
   }
 );
