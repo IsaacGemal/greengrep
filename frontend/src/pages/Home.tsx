@@ -1,14 +1,35 @@
-import { Search, Upload } from 'lucide-react'
+import { Search, Upload, Shuffle } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useState } from 'react'
+import { api } from '../services/api'
 
 function Home() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+    }
+  }
+
+  const handleRandomPosts = async () => {
+    try {
+      setLoading(true)
+      const response = await api.getRandomPosts()
+
+      // Navigate to search results page with random posts
+      navigate('/search', {
+        state: {
+          results: response.results,
+          lastExecutedQuery: 'Random Posts'
+        }
+      })
+    } catch (error) {
+      console.error('Failed to fetch random posts:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -49,12 +70,29 @@ function Home() {
             />
           </div>
 
-          <button
-            onClick={handleSearch}
-            className="w-full bg-[#004d2f] hover:bg-[#006d3f] text-[#00ff00] py-6 text-lg rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#00ff00]"
-          >
-            Search Greentexts
-          </button>
+          <div className="flex gap-4">
+
+            <button
+              onClick={handleRandomPosts}
+              disabled={loading}
+              className="flex-1 bg-[#004d2f] hover:bg-[#006d3f] text-[#00ff00] py-6 text-lg rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#00ff00] flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <div className="animate-spin h-5 w-5 border-2 border-[#00ff00] border-t-transparent rounded-full" />
+              ) : (
+                <>
+                  <Shuffle className="w-5 h-5" />
+                  Roll
+                </>
+              )}
+            </button>
+            <button
+              onClick={handleSearch}
+              className="flex-1 bg-[#004d2f] hover:bg-[#006d3f] text-[#00ff00] py-6 text-lg rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#00ff00]"
+            >
+              Search Greentexts
+            </button>
+          </div>
         </div>
       </main>
 
