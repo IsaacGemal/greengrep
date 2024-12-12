@@ -186,5 +186,7 @@ app.listen(
   },
   () => {
     console.log(`🦊 Server is running on port ${process.env.PORT || 3000}`);
+    console.log("DB:", process.env.DATABASE_URL);
+    console.log("REDIS:", process.env.REDIS_URL);
   }
 );

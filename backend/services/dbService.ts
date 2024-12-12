@@ -82,10 +82,8 @@ export default async function searchPosts(searchEmbedding: number[]) {
   try {
     return await prisma.$queryRaw`
       SELECT 
-        p.id,
         p.url,
-        c.text,
-        c.greentext,
+        p.is_nsfw,
         1 - (c.embedding::vector <#> ${searchEmbedding}::vector) as similarity
       FROM "Content" c
       JOIN "Post" p ON p."contentId" = c.id
