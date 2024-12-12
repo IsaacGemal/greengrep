@@ -84,6 +84,7 @@ export default async function searchPosts(searchEmbedding: number[]) {
       SELECT 
         p.id,
         p.url,
+        p.is_nsfw,
         c.text,
         c.greentext,
         1 - (c.embedding::vector <#> ${searchEmbedding}::vector) as similarity
