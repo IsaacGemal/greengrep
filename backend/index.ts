@@ -184,11 +184,9 @@ app.get(
 // Add this new endpoint
 app.get(
   "/api/random",
-  async ({ query }) => {
+  async () => {
     try {
-      const limit = query.limit ?? 20;
-      const results = await getRandomPosts(limit);
-
+      const results = await getRandomPosts();
       return {
         results,
         count: results.length,
@@ -199,17 +197,27 @@ app.get(
     }
   },
   {
-    // Add query parameter definition for Swagger
-    query: t.Object({
-      limit: t.Optional(
-        t.Numeric({
-          description: "Number of random posts to return",
-          minimum: 1,
-          maximum: 100,
-          default: 20,
-        })
-      ),
-    }),
+    // Add response schema for Swagger
+    // This isn't really needed, but I'm enjoying learning about TypeBox
+    // And having really clean documentation is a nice touch
+    response: {
+      200: t.Object({
+        results: t.Array(
+          t.Object({
+            url: t.String(),
+            is_nsfw: t.Boolean(),
+          })
+        ),
+        count: t.Number(),
+      }),
+      500: t.Object({
+        error: t.String(),
+      }),
+    },
+    detail: {
+      summary: "Get random posts",
+      description: "Returns 1000 random posts with their URLs and NSFW status",
+    },
   }
 );
 
