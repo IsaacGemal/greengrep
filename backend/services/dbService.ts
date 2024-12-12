@@ -99,3 +99,21 @@ export default async function searchPosts(searchEmbedding: number[]) {
     throw new Error("Failed to perform vector search");
   }
 }
+
+export async function getRandomPosts(
+  limit: number = 20
+): Promise<{ url: string; is_nsfw: boolean }[]> {
+  try {
+    const results = await prisma.$queryRaw<{ url: string; is_nsfw: boolean }[]>`
+      SELECT url, is_nsfw
+      FROM "Post"
+      WHERE url IS NOT NULL
+      ORDER BY RANDOM()
+      LIMIT ${limit}`;
+
+    return results;
+  } catch (error) {
+    console.error("Random posts error:", error);
+    throw new Error("Failed to fetch random posts");
+  }
+}

@@ -10,9 +10,15 @@ export async function generateEmbeddings(analysis: ImageAnalysis) {
   try {
     const embeddings = await Promise.all(
       analysis.posts.map(async (post) => {
-        const fullText = [...post.content.greentext, ...post.content.text].join(
-          " "
-        );
+        const imageDescription = post.embedded_image?.description || "";
+        const fullText = [
+          ...post.content.greentext,
+          ...post.content.text,
+          imageDescription,
+        ].join(" ");
+
+        console.log("Embedding text:", fullText);
+
         const { data } = await openai.embeddings.create({
           model: "text-embedding-3-small",
           input: fullText,
