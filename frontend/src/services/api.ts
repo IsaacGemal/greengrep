@@ -22,6 +22,7 @@ export interface PaginatedResponse {
 export interface SearchResult {
   url: string;
   similarity: number;
+  is_nsfw: boolean;
 }
 
 export interface SearchResponse {

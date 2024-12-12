@@ -19,6 +19,7 @@ function SearchResults() {
     const [lastExecutedQuery, setLastExecutedQuery] = useState<string | null>(
         location.state?.lastExecutedQuery || null
     )
+    const [nsfwEnabled, setNsfwEnabled] = useState(false)
 
     const breakpointColumns = {
         default: 4,
@@ -143,8 +144,8 @@ function SearchResults() {
                 </Link>
 
                 {/* Search Bar */}
-                <div className="flex-1 max-w-xl mx-4">
-                    <div className="relative">
+                <div className="flex-1 max-w-xl mx-4 flex items-center gap-4">
+                    <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#008000]" />
                         <input
                             type="text"
@@ -153,6 +154,26 @@ function SearchResults() {
                             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                             className="w-full bg-[#002f1f] border border-[#004d2f] text-[#00ff00] placeholder-[#008000] pl-10 pr-4 py-2 text-md rounded-md focus:outline-none focus:ring-2 focus:ring-[#00ff00] focus:border-transparent"
                         />
+                    </div>
+
+                    {/* NSFW Toggle Button */}
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-[#008000]">NSFW</span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                                type="checkbox"
+                                className="sr-only peer"
+                                checked={nsfwEnabled}
+                                onChange={(e) => setNsfwEnabled(e.target.checked)}
+                            />
+                            <div className="w-11 h-6 bg-[#002f1f] peer-focus:outline-none rounded-full peer 
+                                peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full 
+                                peer-checked:after:border-white after:content-[''] after:absolute 
+                                after:top-[2px] after:start-[2px] after:bg-[#008000] after:border-[#008000] 
+                                after:border after:rounded-full after:h-5 after:w-5 after:transition-all 
+                                peer-checked:bg-[#004d2f]">
+                            </div>
+                        </label>
                     </div>
                 </div>
             </header>
@@ -180,11 +201,18 @@ function SearchResults() {
                                 state={{ file: result }}
                             >
                                 <div className="bg-[#002f1f] border border-[#004d2f] rounded-lg overflow-hidden hover:border-[#00ff00] transition-colors duration-200">
-                                    <img
-                                        src={result.url}
-                                        alt={`Search result ${index + 1}`}
-                                        className="w-full h-auto"
-                                    />
+                                    <div className={`relative ${result.is_nsfw && !nsfwEnabled ? 'blur-xl' : ''}`}>
+                                        <img
+                                            src={result.url}
+                                            alt={`Search result ${index + 1}`}
+                                            className="w-full h-auto"
+                                        />
+                                        {result.is_nsfw && !nsfwEnabled && (
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <span className="text-[#00ff00] bg-[#002f1f] px-3 py-1 rounded">NSFW</span>
+                                            </div>
+                                        )}
+                                    </div>
                                     <div className="p-4">
                                         <p className="text-[#008000] text-sm">
                                             Similarity: {(result.similarity * 100).toFixed(2)}%
