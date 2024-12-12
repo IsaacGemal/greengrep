@@ -71,4 +71,12 @@ export const api = {
 
     return await response.json();
   },
+
+  getRandomPosts: async () => {
+    const response = await fetch(`${API_BASE_URL}/random`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch random posts");
+    }
+    return response.json();
+  },
 };
