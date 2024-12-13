@@ -1,7 +1,7 @@
 import sharp from "sharp";
 
 // This is a hash function that is used to compare images
-// It's based on the average hash algorithm
+// It's based on the average hash algorithm, and modified to use 16x16 instead of 8x8
 // https://kb.feval.ca/engineering/algorithm/ahash.html
 // Very fast and simple and fuzzy, which is what we need
 // We can always refine it later
@@ -10,9 +10,9 @@ export async function calculateAverageHash(
   imageBuffer: Buffer
 ): Promise<string> {
   try {
-    // Resize to 8x8 and convert to grayscale
+    // Resize to 16x16 and convert to grayscale
     const resizedBuffer = await sharp(imageBuffer)
-      .resize(8, 8, { fit: "fill" })
+      .resize(16, 16, { fit: "fill" })
       .grayscale()
       .raw()
       .toBuffer();
