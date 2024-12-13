@@ -4,7 +4,6 @@ import { S3, ListObjectsV2Command, PutObjectCommand } from "@aws-sdk/client-s3";
 import { analyzeImage } from "./services/claudeService";
 import { storeAnalysis } from "./services/dbService";
 import { generateSearchEmbedding } from "./services/openaiService";
-import { calculateAverageHash } from "./services/hashingService";
 import searchPosts from "./services/dbService";
 import { swagger } from "@elysiajs/swagger";
 import {
@@ -87,8 +86,6 @@ app.post(
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
-      await calculateAverageHash(buffer);
-
       // Upload file to S3
       await s3.send(
         new PutObjectCommand({
@@ -138,25 +135,33 @@ app.post(
 app.get(
   "/api/vector-search",
   async ({ query, error }) => {
+    const searchQuery = query.q;
+    if (!searchQuery) {
+      return error(400, { error: "Search query is required" });
+    }
+
     try {
-      // No need for manual decoding - Elysia handles this
-      const cachedResults = await getCachedSearch(query.q);
+      // Check cache first
+      const cachedResults = await getCachedSearch(searchQuery);
       if (cachedResults) {
-        console.log("Cache hit for query:", query.q);
+        console.log("Cache hit for query:", searchQuery);
         return {
-          query: query.q,
+          query: searchQuery,
           results: cachedResults as SearchResult[],
           cached: true,
         };
       }
 
-      console.log("Cache miss for query:", query.q);
-      const embedding = await generateSearchEmbedding(query.q);
+      console.log("Cache miss for query:", searchQuery);
+      // If not in cache, perform the search
+      const embedding = await generateSearchEmbedding(searchQuery);
       const results = (await searchPosts(embedding)) as SearchResult[];
-      await setCachedSearch(query.q, results);
+
+      // Cache the results
+      await setCachedSearch(searchQuery, results);
 
       return {
-        query: query.q,
+        query: searchQuery,
         results,
         cached: false,
       };
@@ -166,14 +171,11 @@ app.get(
     }
   },
   {
+    // Add query parameter definition for Swagger
     query: t.Object({
       q: t.String({
         description: "Search query term",
         required: true,
-        minLength: 1,
-        pattern: "^[\\w\\s\\-&.,!?'\"%]+$", // Allows specific special characters
-        error:
-          "Invalid search query. Only alphanumeric characters and basic punctuation are allowed.",
       }),
     }),
   }
