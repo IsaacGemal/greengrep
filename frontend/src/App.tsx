@@ -3,6 +3,7 @@ import Home from './pages/Home';
 import SearchResults from './pages/SearchResults';
 import ImageDetails from './pages/ImageDetails';
 import Upload from './pages/Upload.tsx';
+import About from './pages/About';
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <Route path="/search" element={<SearchResults />} />
         <Route path="/image/:key" element={<ImageDetails />} />
         <Route path="/upload" element={<Upload />} />
+        <Route path="/about" element={<About />} />
       </Routes>
     </Router>
   );
