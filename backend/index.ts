@@ -6,6 +6,7 @@ import { storeAnalysis } from "./services/dbService";
 import { generateSearchEmbedding } from "./services/openaiService";
 import searchPosts from "./services/dbService";
 import { swagger } from "@elysiajs/swagger";
+import { calculateAverageHash } from "./services/hashingService";
 import {
   getCachedSearch,
   setCachedSearch,
@@ -86,6 +87,7 @@ app.post(
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
+      await calculateAverageHash(buffer);
       // Upload file to S3
       await s3.send(
         new PutObjectCommand({
