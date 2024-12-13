@@ -1,4 +1,5 @@
 import { Anthropic } from "@anthropic-ai/sdk";
+import { fileTypeFromBuffer } from "file-type";
 import type { ImageAnalysis } from "./types";
 
 // Initialize Claude client
@@ -18,23 +19,14 @@ export async function analyzeImage(
     const imageBuffer = await imageResponse.arrayBuffer();
     const base64Image = Buffer.from(imageBuffer).toString("base64");
 
+    // Detect actual file type
+    const fileType = await fileTypeFromBuffer(Buffer.from(imageBuffer));
+    const detectedMimeType = fileType?.mime || "image/jpeg";
+
     console.log("Image URL:", imageUrl);
-    console.log("Format:", format);
+    console.log("Provided format:", format);
+    console.log("Detected format:", detectedMimeType);
     console.log("Base64 length:", base64Image.length);
-
-    // Media type mapping
-    const mediaTypeMap: { [key: string]: string } = {
-      jpeg: "image/jpeg",
-      "image/jpeg": "image/jpeg",
-      png: "image/png",
-      "image/png": "image/png",
-      gif: "image/gif",
-      "image/gif": "image/gif",
-      webp: "image/webp",
-      "image/webp": "image/webp",
-    };
-
-    const mediaType = mediaTypeMap[format.toLowerCase()] || "image/jpeg";
 
     const message = await anthropic.messages.create({
       model: "claude-3-5-sonnet-20241022",
@@ -47,10 +39,9 @@ export async function analyzeImage(
               type: "image",
               source: {
                 type: "base64",
-                media_type: mediaType as
+                media_type: detectedMimeType as
                   | "image/jpeg"
                   | "image/png"
-                  | "image/gif"
                   | "image/webp",
                 data: base64Image,
               },

@@ -37,7 +37,7 @@ function Upload() {
         setIsDragging(false)
 
         const droppedFiles = Array.from(e.dataTransfer.files)
-            .filter(file => file.type === 'image/jpeg' || file.type === 'image/png')
+            .filter(file => file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/webp')
             .map(file => ({
                 file,
                 status: 'pending' as const
@@ -100,7 +100,7 @@ function Upload() {
                             onChange={handleFileChange}
                             className="hidden"
                             id="file-upload"
-                            accept="image/jpeg,image/png"
+                            accept="image/jpeg,image/png,image/webp"
                             multiple
                         />
                         <label
