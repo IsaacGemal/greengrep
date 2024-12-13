@@ -1,7 +1,7 @@
 // src/components/Header.tsx
 import { Link } from 'react-router-dom'
 import SearchBar from './SearchBar'
-import NsfwToggle from './NSFWToggle'
+import NsfwToggle from './NsfwToggle.tsx'
 
 interface HeaderProps {
     searchQuery: string
