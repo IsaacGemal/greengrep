@@ -124,8 +124,8 @@ app.post(
     // Validation schema
     body: t.Object({
       file: t.File({
-        type: ["image/jpeg", "image/png"], // Allowed MIME types
-        maxSize: "5m", // Max file size is 5 MB
+        type: ["image/jpeg", "image/png", "image/webp"], // Added WebP support
+        maxSize: "5m",
       }),
     }),
   }
