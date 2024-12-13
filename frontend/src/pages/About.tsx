@@ -28,43 +28,19 @@ function About() {
       <main className="flex-1 p-8 max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">About Greengrep</h1>
 
-        <div className="space-y-6 text-[#008000]">
-          <section>
-            <h2 className="text-xl text-[#00ff00] mb-2">What is Greengrep?</h2>
+        <div className="space-y-6 text-[#008000] font-mono">
+          <section className="whitespace-pre-line">
             <p>
-              Greengrep is a visual search engine for greentexts, powered by PostgreSQL's vector search capabilities.
-              It allows you to search through a collection of greentext images using natural language queries.
+              {`> be me
+> browsing the web
+> no decent greentext search engine
+> all roads lead to reddit slop
+> screw it, I'll build one myself
+> learn react, postgresql, and vector search
+> spend way too much time on this
+> it actually works
+> mfw you're using it right now`}
             </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl text-[#00ff00] mb-2">How it Works</h2>
-            <p>
-              Images are processed using computer vision to extract text and generate embeddings.
-              These embeddings are stored in a PostgreSQL database, enabling semantic search capabilities
-              that go beyond simple keyword matching.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl text-[#00ff00] mb-2">Features</h2>
-            <ul className="list-disc list-inside space-y-2">
-              <li>Natural language search for greentext images</li>
-              <li>Random greentext discovery</li>
-              <li>Image upload capabilities</li>
-              <li>NSFW content filtering</li>
-              <li>Responsive masonry layout</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-xl text-[#00ff00] mb-2">Technology Stack</h2>
-            <ul className="list-disc list-inside space-y-2">
-              <li>Frontend: React, TypeScript, Tailwind CSS</li>
-              <li>Backend: PostgreSQL with pgvector</li>
-              <li>Storage: AWS S3</li>
-              <li>Image Processing: Computer Vision APIs</li>
-            </ul>
           </section>
         </div>
       </main>
