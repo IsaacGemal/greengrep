@@ -18,6 +18,7 @@ import {
 } from "./services/redisService";
 import { getRandomPosts } from "./services/dbService";
 import { findSimilarItems } from "./services/duplicateService";
+import { PrismaClient } from "@prisma/client";
 
 const BUCKET_NAME = process.env.BUCKET_NAME || "greengrep";
 const AWS_REGION = process.env.AWS_REGION || "us-east-1";
@@ -31,6 +32,8 @@ const s3 = new S3({
     secretAccessKey: AWS_SECRET_ACCESS_KEY,
   },
 });
+
+const prisma = new PrismaClient();
 
 const app = new Elysia()
   .use(swagger())
@@ -245,6 +248,19 @@ app.get(
     },
   }
 );
+
+// Add this new endpoint right before app.listen()
+app.get("/api/stats", async () => {
+  try {
+    const count = await prisma.post.count();
+    return {
+      totalImages: count,
+    };
+  } catch (err) {
+    console.error("Stats error:", err);
+    return error(500, { error: "Failed to fetch stats" });
+  }
+});
 
 app.listen(
   {
