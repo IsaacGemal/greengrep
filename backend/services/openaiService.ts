@@ -1,7 +1,6 @@
 import OpenAI from "openai";
 import { getCachedEmbedding, setCachedEmbedding } from "./redisService";
 import type { ImageAnalysis } from "./types";
-import { kind } from "openai/_shims/index.mjs";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,

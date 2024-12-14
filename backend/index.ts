@@ -1,6 +1,11 @@
 import { Elysia, error, t } from "elysia";
 import { cors } from "@elysiajs/cors";
-import { S3, ListObjectsV2Command, PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3,
+  ListObjectsV2Command,
+  PutObjectCommand,
+  DeleteObjectCommand,
+} from "@aws-sdk/client-s3";
 import { analyzeImage } from "./services/claudeService";
 import { storeAnalysis } from "./services/dbService";
 import { generateSearchEmbedding } from "./services/openaiService";
@@ -108,9 +113,24 @@ app.post(
       );
 
       // Check for duplicates using the analysis object directly
-      const duplicates = await findSimilarItems(analysis);
+      const { isDuplicate, similarItems } = await findSimilarItems(analysis);
 
-      // Store the analysis in the database
+      if (isDuplicate) {
+        // Delete the file from S3
+        await s3.send(
+          new DeleteObjectCommand({
+            Bucket: BUCKET_NAME,
+            Key: uniqueFileName,
+          })
+        );
+
+        return error(409, {
+          error: "Duplicate content detected",
+          similarItems,
+        });
+      }
+
+      // If not a duplicate, proceed with storing the analysis
       const storedPosts = await storeAnalysis(analysis);
 
       return {
@@ -118,7 +138,7 @@ app.post(
         fileUrl,
         analysis,
         storedPosts,
-        duplicates,
+        similarItems,
       };
     } catch (err) {
       console.error("Upload error:", err);

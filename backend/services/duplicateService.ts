@@ -2,13 +2,17 @@ import { generateEmbeddingWithoutCache } from "./openaiService";
 import searchPosts from "./dbService";
 import type { ImageAnalysis } from "./types";
 
+const SIMILARITY_THRESHOLD = 1.95;
+
 export async function findSimilarItems(analysis: ImageAnalysis) {
   try {
-    // Combine all text content from the post for similarity checking
-    const post = analysis.posts[0]; // We currently only handle single posts
+    const post = analysis.posts[0];
     if (!post) {
       console.log("No post found in analysis");
-      return [];
+      return {
+        isDuplicate: false,
+        similarItems: [],
+      };
     }
 
     const textContent = [
@@ -21,30 +25,43 @@ export async function findSimilarItems(analysis: ImageAnalysis) {
 
     if (!textContent) {
       console.log("No text content found to analyze");
-      return [];
+      return {
+        isDuplicate: false,
+        similarItems: [],
+      };
     }
 
     console.log("Searching for similar items with text:", textContent);
 
-    // Generate embedding for the combined text
     const embedding = await generateEmbeddingWithoutCache(textContent);
+    const results = (await searchPosts(embedding)) as Array<{
+      similarity: number;
+      url: string;
+    }>;
 
-    // Perform similarity search in the database
-    const results = await searchPosts(embedding);
+    const isDuplicate = results.some(
+      (item) => item.similarity >= SIMILARITY_THRESHOLD
+    );
 
-    // Return the top 5 closest items and their similarity scores
-    const topResults = (
-      results as Array<{ url: string; is_nsfw: boolean; similarity: number }>
-    )
-      .slice(0, 5)
-      .map((result) => ({
-        url: result.url,
-        is_nsfw: result.is_nsfw,
-        similarity: result.similarity,
-      }));
+    if (isDuplicate) {
+      console.log(
+        `Duplicate detected with similarity >= ${SIMILARITY_THRESHOLD}`,
+        {
+          textContent,
+          results: results
+            .filter((item) => item.similarity >= SIMILARITY_THRESHOLD)
+            .map((item) => ({
+              similarity: item.similarity.toFixed(3),
+              url: item.url,
+            })),
+        }
+      );
+    }
 
-    console.log("Top 5 similar items:", topResults);
-    return topResults;
+    return {
+      isDuplicate,
+      similarItems: results,
+    };
   } catch (error) {
     console.error("Error finding similar items:", error);
     throw new Error("Failed to find similar items");
