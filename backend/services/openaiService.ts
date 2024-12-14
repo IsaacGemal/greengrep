@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { getCachedEmbedding, setCachedEmbedding } from "./redisService";
 import type { ImageAnalysis } from "./types";
+import { kind } from "openai/_shims/index.mjs";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -17,6 +18,10 @@ export async function generateEmbeddings(analysis: ImageAnalysis) {
           imageDescription,
         ].join(" ");
 
+        // TODO
+        // Right now we are embedding each post individually
+        // We should probably embed every all together
+        // For now it still works but it's not as good
         console.log("Embedding text:", fullText);
 
         const { data } = await openai.embeddings.create({

@@ -33,10 +33,11 @@ export async function findSimilarItems(analysis: ImageAnalysis) {
     const results = await searchPosts(embedding);
 
     // Return the top 5 closest items and their similarity scores
-    //@ts-ignore
-    const topResults = results
+    const topResults = (
+      results as Array<{ url: string; is_nsfw: boolean; similarity: number }>
+    )
       .slice(0, 5)
-      .map((result: { url: string; is_nsfw: boolean; similarity: number }) => ({
+      .map((result) => ({
         url: result.url,
         is_nsfw: result.is_nsfw,
         similarity: result.similarity,
