@@ -66,6 +66,12 @@ function SearchResults() {
         }
     }, [searchQuery, debouncedSearch])
 
+    useEffect(() => {
+        if (!initialSearchQuery && !location.state?.results) {
+            navigate('/', { replace: true })
+        }
+    }, [initialSearchQuery, location.state?.results, navigate])
+
     const handleSearch = () => {
         if (searchQuery.trim()) {
             navigate(`/search?q=${encodeURIComponent(searchQuery)}`)
