@@ -17,6 +17,10 @@ export async function generateEmbeddings(analysis: ImageAnalysis) {
           imageDescription,
         ].join(" ");
 
+        // TODO
+        // Right now we are embedding each post individually
+        // We should probably embed every all together
+        // For now it still works but it's not as good
         console.log("Embedding text:", fullText);
 
         const { data } = await openai.embeddings.create({
@@ -65,5 +69,22 @@ export async function generateSearchEmbedding(searchQuery: string) {
   } catch (error) {
     console.error("Search embedding generation failed:", error);
     throw new Error("Failed to generate search embedding");
+  }
+}
+
+// This is used for the duplicate search
+// Redis would be overkill here
+export async function generateEmbeddingWithoutCache(text: string) {
+  try {
+    const { data } = await openai.embeddings.create({
+      model: "text-embedding-3-small",
+      input: text,
+      encoding_format: "float",
+    });
+
+    return data[0].embedding;
+  } catch (error) {
+    console.error("Embedding generation failed:", error);
+    throw new Error("Failed to generate embedding");
   }
 }
