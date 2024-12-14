@@ -67,3 +67,20 @@ export async function generateSearchEmbedding(searchQuery: string) {
     throw new Error("Failed to generate search embedding");
   }
 }
+
+// This is used for the duplicate search
+// Redis would be overkill here
+export async function generateEmbeddingWithoutCache(text: string) {
+  try {
+    const { data } = await openai.embeddings.create({
+      model: "text-embedding-3-small",
+      input: text,
+      encoding_format: "float",
+    });
+
+    return data[0].embedding;
+  } catch (error) {
+    console.error("Embedding generation failed:", error);
+    throw new Error("Failed to generate embedding");
+  }
+}

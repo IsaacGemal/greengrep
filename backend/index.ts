@@ -12,6 +12,7 @@ import {
   type SearchResult,
 } from "./services/redisService";
 import { getRandomPosts } from "./services/dbService";
+import { findSimilarItems } from "./services/duplicateService";
 
 const BUCKET_NAME = process.env.BUCKET_NAME || "greengrep";
 const AWS_REGION = process.env.AWS_REGION || "us-east-1";
@@ -106,6 +107,9 @@ app.post(
         file.type
       );
 
+      // Check for duplicates using the analysis object directly
+      const duplicates = await findSimilarItems(analysis);
+
       // Store the analysis in the database
       const storedPosts = await storeAnalysis(analysis);
 
@@ -114,6 +118,7 @@ app.post(
         fileUrl,
         analysis,
         storedPosts,
+        duplicates,
       };
     } catch (err) {
       console.error("Upload error:", err);
