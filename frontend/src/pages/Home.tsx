@@ -19,8 +19,8 @@ function Home() {
       setLoading(true)
       const response = await api.getRandomPosts()
 
-      // Navigate to search results page with random posts
-      navigate('/search', {
+      // Navigate to random page instead of search
+      navigate('/random', {
         state: {
           results: response.results,
           lastExecutedQuery: 'Random Posts'
