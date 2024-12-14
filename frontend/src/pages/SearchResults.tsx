@@ -32,18 +32,26 @@ function SearchResults() {
 
     const debouncedSearch = useCallback(
         debounce(async (query: string) => {
-            if (query && query !== lastExecutedQuery) {
+            // Quick fix: Remove leading ampersand to prevent API issues
+            const sanitizedQuery = query.replace(/^&+/, '')
+
+            if (!sanitizedQuery) {
+                setLoading(false)
+                return
+            }
+
+            if (sanitizedQuery !== lastExecutedQuery) {
                 try {
                     setLoading(true)
-                    const response = await api.search(query)
+                    const response = await api.search(sanitizedQuery)
                     setResults(response.results)
-                    setLastExecutedQuery(query)
+                    setLastExecutedQuery(sanitizedQuery)
 
-                    navigate(`/search?q=${encodeURIComponent(query)}`, {
+                    navigate(`/search?q=${encodeURIComponent(sanitizedQuery)}`, {
                         replace: true,
                         state: {
                             results: response.results,
-                            lastExecutedQuery: query
+                            lastExecutedQuery: sanitizedQuery
                         }
                     })
                 } catch (err) {
@@ -52,7 +60,7 @@ function SearchResults() {
                 } finally {
                     setLoading(false)
                 }
-            } else if (query === lastExecutedQuery) {
+            } else if (sanitizedQuery === lastExecutedQuery) {
                 setLoading(false)
             }
         }, 500),
@@ -65,6 +73,12 @@ function SearchResults() {
             debouncedSearch.cancel()
         }
     }, [searchQuery, debouncedSearch])
+
+    useEffect(() => {
+        if (!initialSearchQuery && !location.state?.results) {
+            navigate('/', { replace: true })
+        }
+    }, [initialSearchQuery, location.state?.results, navigate])
 
     const handleSearch = () => {
         if (searchQuery.trim()) {

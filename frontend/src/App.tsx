@@ -11,6 +11,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/search" element={<SearchResults />} />
+        <Route path="/random" element={<SearchResults />} />
         <Route path="/image/:key" element={<ImageDetails />} />
         <Route path="/upload" element={<Upload />} />
         <Route path="/about" element={<About />} />
