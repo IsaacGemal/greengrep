@@ -101,7 +101,7 @@ export default async function searchPosts(searchEmbedding: number[]) {
 }
 
 export async function getRandomPosts(
-  limit: number = 1000 // We can change or adjust this later, for now it's hardcoded to 1000
+  limit: number = 100 // We can change or adjust this later, for now it's hardcoded to 100
 ): Promise<{ url: string; is_nsfw: boolean }[]> {
   try {
     const results = await prisma.$queryRaw<{ url: string; is_nsfw: boolean }[]>`

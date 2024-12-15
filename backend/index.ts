@@ -244,7 +244,7 @@ app.get(
     },
     detail: {
       summary: "Get random posts",
-      description: "Returns 1000 random posts with their URLs and NSFW status",
+      description: "Returns 100 random posts with their URLs and NSFW status",
     },
   }
 );
