@@ -2,9 +2,11 @@ import { Anthropic } from "@anthropic-ai/sdk";
 import { fileTypeFromBuffer } from "file-type";
 import type { ImageAnalysis } from "./types";
 
-// Initialize Claude client
+// Initialize Grok client using Anthropic SDK
+// I can't believe this actually works
 const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+  apiKey: process.env.XAI_API_KEY,
+  baseURL: "https://api.x.ai/",
 });
 
 export async function analyzeImage(
@@ -29,7 +31,7 @@ export async function analyzeImage(
     console.log("Base64 length:", base64Image.length);
 
     const message = await anthropic.messages.create({
-      model: "claude-3-5-sonnet-20241022",
+      model: "grok-vision-beta",
       max_tokens: 1024,
       messages: [
         {
@@ -48,13 +50,13 @@ export async function analyzeImage(
             },
             {
               type: "text",
-              text: `You are looking at a screenshot of one or more 4chan posts. 4chan is an anonymous imageboard where users can post text and images. Posts typically have an ID number, timestamp, and optional poster name. Some text lines start with ">" which makes them appear green ("greentext"). Extract all information from this 4chan-style post(s) into JSON format. There may be multiple posts in the image. For each post, capture the post ID, board name, timestamp, and poster name. For posts with images, include the image details. Separate the content into arrays of greentext (lines starting with ">") and regular text. Lastly make a determination of whether the post contains NSFW content (ie, 18+). DO NOT OUTPUT ANYTHING OTHER THAN THE JSON. Use this structure:
+              text: `You are looking at a screenshot of one or more 4chan posts. 4chan is an anonymous imageboard where users can post text and images. Posts typically have an ID number, timestamp, and optional poster name. Some text lines start with ">" which makes them appear green ("greentext"). Extract all information from this 4chan-style post(s) into JSON format. There may be multiple posts in the image. For each post, capture the post ID, board name, timestamp, and poster name. For posts with images, include the image details. Separate the content into arrays of greentext (lines starting with ">") and regular text. Lastly make a determination of whether the post contains NSFW content (ie, 18+). IMPORTANT: Output raw JSON only - do not wrap in markdown code blocks or add any other formatting. Use this structure:
               {
                 "posts": [
                   {
                     "post_id": "4chan post id",
                     "board": "board name or null if not specified",
-                    "timestamp": "post timestamp",
+                    "timestamp": "the timestamp of the post (MUST BE IN ISO 8601 FORMAT)",
                     "poster": "poster name",
                     "has_image": true,
                     "is_nsfw": true,
@@ -80,7 +82,7 @@ export async function analyzeImage(
 
     const response =
       message.content[0].type === "text" ? message.content[0].text : "";
-    console.log("Claude Analysis:", response);
+    console.log("Grok Analysis:", response);
 
     const analysis = JSON.parse(response) as ImageAnalysis;
 
@@ -92,7 +94,7 @@ export async function analyzeImage(
 
     return analysis;
   } catch (error) {
-    console.error("Error analyzing image with Claude:", error);
+    console.error("Error analyzing image with Grok:", error);
     throw error;
   }
 }
