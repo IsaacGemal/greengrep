@@ -84,10 +84,11 @@ export async function analyzeImage(
 
     const analysis = JSON.parse(response) as ImageAnalysis;
 
-    // Add URL to the single post
-    if (analysis.posts[0]) {
-      analysis.posts[0].url = imageUrl;
-    }
+    // Assign the URL to every post in the analysis
+    analysis.posts = analysis.posts.map((post) => ({
+      ...post,
+      url: imageUrl,
+    }));
 
     return analysis;
   } catch (error) {
