@@ -9,7 +9,7 @@ import {
 import { analyzeImage } from "./services/claudeService";
 import { storeAnalysis } from "./services/dbService";
 import { generateSearchEmbedding } from "./services/openaiService";
-import searchPosts from "./services/dbService";
+import searchPosts, { searchPostsPaginated } from "./services/dbService";
 import { swagger } from "@elysiajs/swagger";
 import {
   getCachedSearch,
@@ -35,8 +35,30 @@ const s3 = new S3({
 
 const prisma = new PrismaClient();
 
+const PROD_URL = "https://greengrep-production.up.railway.app";
+const DEV_URL = "http://localhost:3001";
+
 const app = new Elysia()
-  .use(swagger())
+  .use(
+    swagger({
+      documentation: {
+        info: {
+          title: "Greengrep API",
+          version: "1.0.0",
+        },
+        servers: [
+          {
+            url: PROD_URL,
+            description: "Production server (Railway)",
+          },
+          {
+            url: DEV_URL,
+            description: "Local development server",
+          },
+        ],
+      },
+    })
+  )
   .use(cors())
   // Global error handler: log the error and respond with a generic message
   .onError(({ error }) => {
@@ -209,7 +231,92 @@ app.get(
   }
 );
 
-// Add this new endpoint
+// Experimental paginated vector search
+// Note - there is no frontend for this yet
+// This is just a proof of concept
+app.get(
+  "/api/vector-search-paginated",
+  async ({ query, error }) => {
+    const searchQuery = query.q;
+    const page = query.page ?? "1";
+    const limit = query.limit ?? "20";
+    const offset = (Number(page) - 1) * Number(limit); // Typescript weirdness
+
+    if (!searchQuery) {
+      return error(400, { error: "Search query is required" });
+    }
+
+    try {
+      // Create cache key that includes pagination params
+      const cacheKey = `${searchQuery}:${page}:${limit}`;
+
+      // Check cache first with pagination params
+      const cachedResults = await getCachedSearch(cacheKey);
+      if (cachedResults) {
+        console.log("Cache hit for paginated query:", cacheKey);
+        return {
+          query: searchQuery,
+          results: cachedResults as SearchResult[],
+          page,
+          limit,
+          cached: true,
+        };
+      }
+
+      console.log("Cache miss for paginated query:", cacheKey);
+
+      // If not in cache, perform the search using the paginated version
+      const embedding = await generateSearchEmbedding(searchQuery);
+      const results = (await searchPostsPaginated(
+        embedding,
+        Number(limit),
+        offset
+      )) as SearchResult[];
+
+      // Cache the paginated results
+      // This still works because the query is just treated as a string
+      // Will look for "cats:1:20" for example
+      await setCachedSearch(cacheKey, results);
+
+      return {
+        query: searchQuery,
+        results,
+        page,
+        limit,
+        cached: false,
+      };
+    } catch (err) {
+      console.error("Paginated vector search error:", err);
+      return error(500, { error: "Search failed" });
+    }
+  },
+  {
+    // Add query parameter definitions for Swagger
+    query: t.Object({
+      q: t.String({
+        description: "Search query term",
+        required: true,
+      }),
+      page: t.Optional(
+        t.Number({
+          description: "Page number (starts from 1)",
+          default: 1,
+          minimum: 1,
+        })
+      ),
+      limit: t.Optional(
+        t.Number({
+          description: "Number of results per page",
+          default: 20,
+          minimum: 1,
+          maximum: 100,
+        })
+      ),
+    }),
+  }
+);
+
+// Random posts
 app.get(
   "/api/random",
   async () => {
@@ -242,14 +349,12 @@ app.get(
         error: t.String(),
       }),
     },
-    detail: {
-      summary: "Get random posts",
-      description: "Returns 100 random posts with their URLs and NSFW status",
-    },
   }
 );
 
-// Add this new endpoint right before app.listen()
+// Simple post count
+// Technically this could be cached too with redis, driving down the time complexity
+// But it's just a simple count, so it's not a big deal
 app.get("/api/stats", async () => {
   try {
     const count = await prisma.post.count();

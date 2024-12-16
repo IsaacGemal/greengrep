@@ -117,3 +117,30 @@ export async function getRandomPosts(
     throw new Error("Failed to fetch random posts");
   }
 }
+
+export async function searchPostsPaginated(
+  searchEmbedding: number[],
+  limit: number = 20,
+  offset: number = 0
+) {
+  try {
+    return await prisma.$queryRaw`
+      SELECT 
+        p.url,
+        p.is_nsfw,
+        1 - (c.embedding::vector <#> ${searchEmbedding}::vector) as similarity
+      FROM "Content" c
+      JOIN "Post" p ON p."contentId" = c.id
+      WHERE (c.embedding::vector <#> ${searchEmbedding}::vector) < 0.3
+      ORDER BY similarity DESC
+      LIMIT ${limit}
+      OFFSET ${offset};
+    `;
+  } catch (error) {
+    console.error(
+      "Paginated search error:",
+      error instanceof Error ? error.message : error
+    );
+    throw new Error("Failed to perform paginated vector search");
+  }
+}
