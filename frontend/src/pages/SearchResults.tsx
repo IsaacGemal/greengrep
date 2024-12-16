@@ -22,6 +22,9 @@ function SearchResults() {
         location.state?.lastExecutedQuery || null
     )
     const [nsfwEnabled, setNsfwEnabled] = useState(false)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [hasMore, setHasMore] = useState(true)
+    const ITEMS_PER_PAGE = 20
 
     const breakpointColumns = {
         default: 4,
@@ -31,8 +34,7 @@ function SearchResults() {
     }
 
     const debouncedSearch = useCallback(
-        debounce(async (query: string) => {
-            // Quick fix: Remove leading ampersand to prevent API issues
+        debounce(async (query: string, page: number) => {
             const sanitizedQuery = query.replace(/^&+/, '')
 
             if (!sanitizedQuery) {
@@ -40,20 +42,29 @@ function SearchResults() {
                 return
             }
 
-            if (sanitizedQuery !== lastExecutedQuery) {
+            if (sanitizedQuery !== lastExecutedQuery || page > 1) {
                 try {
                     setLoading(true)
-                    const response = await api.search(sanitizedQuery)
-                    setResults(response.results)
-                    setLastExecutedQuery(sanitizedQuery)
+                    const response = await api.search(sanitizedQuery, page, ITEMS_PER_PAGE)
 
-                    navigate(`/search?q=${encodeURIComponent(sanitizedQuery)}`, {
-                        replace: true,
-                        state: {
-                            results: response.results,
-                            lastExecutedQuery: sanitizedQuery
-                        }
-                    })
+                    if (page === 1) {
+                        setResults(response.results)
+                    } else {
+                        setResults(prev => [...prev, ...response.results])
+                    }
+
+                    setLastExecutedQuery(sanitizedQuery)
+                    setHasMore(response.results.length === ITEMS_PER_PAGE)
+
+                    if (page === 1) {
+                        navigate(`/search?q=${encodeURIComponent(sanitizedQuery)}`, {
+                            replace: true,
+                            state: {
+                                results: response.results,
+                                lastExecutedQuery: sanitizedQuery
+                            }
+                        })
+                    }
                 } catch (err) {
                     console.error('Search error:', err)
                     setError('Failed to perform search')
@@ -68,11 +79,11 @@ function SearchResults() {
     )
 
     useEffect(() => {
-        debouncedSearch(searchQuery)
+        debouncedSearch(searchQuery, currentPage)
         return () => {
             debouncedSearch.cancel()
         }
-    }, [searchQuery, debouncedSearch])
+    }, [searchQuery, currentPage, debouncedSearch])
 
     useEffect(() => {
         if (!initialSearchQuery && !location.state?.results) {
@@ -83,6 +94,12 @@ function SearchResults() {
     const handleSearch = () => {
         if (searchQuery.trim()) {
             navigate(`/search?q=${encodeURIComponent(searchQuery)}`)
+        }
+    }
+
+    const loadMore = () => {
+        if (!loading && hasMore) {
+            setCurrentPage(prev => prev + 1)
         }
     }
 
@@ -170,6 +187,18 @@ function SearchResults() {
                         </div>
                     ))}
                 </Masonry>
+
+                {results.length > 0 && hasMore && (
+                    <div className="mt-8 flex justify-center">
+                        <button
+                            onClick={loadMore}
+                            disabled={loading}
+                            className="bg-[#002f1f] border border-[#004d2f] text-[#00ff00] px-4 py-2 rounded hover:border-[#00ff00] transition-colors duration-200 disabled:opacity-50"
+                        >
+                            {loading ? 'Loading...' : 'Load More'}
+                        </button>
+                    </div>
+                )}
             </main>
 
             <Footer />
