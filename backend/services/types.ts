@@ -5,7 +5,7 @@ export interface ImagePost {
   poster: string;
   has_image: boolean;
   is_nsfw: boolean;
-  url?: string;
+  url: string;
   embedded_image?: {
     filename?: string;
     size?: string;
