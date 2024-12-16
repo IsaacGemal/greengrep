@@ -7,6 +7,7 @@ import { api } from '../services/api'
 import { SearchResult } from '../services/api'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
+import LoadingTrigger from '../components/LoadingTrigger'
 
 function SearchResults() {
     const [searchParams] = useSearchParams()
@@ -22,6 +23,9 @@ function SearchResults() {
         location.state?.lastExecutedQuery || null
     )
     const [nsfwEnabled, setNsfwEnabled] = useState(false)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [hasMore, setHasMore] = useState(true)
+    const ITEMS_PER_PAGE = 20
 
     const breakpointColumns = {
         default: 4,
@@ -31,8 +35,7 @@ function SearchResults() {
     }
 
     const debouncedSearch = useCallback(
-        debounce(async (query: string) => {
-            // Quick fix: Remove leading ampersand to prevent API issues
+        debounce(async (query: string, page: number) => {
             const sanitizedQuery = query.replace(/^&+/, '')
 
             if (!sanitizedQuery) {
@@ -40,20 +43,32 @@ function SearchResults() {
                 return
             }
 
-            if (sanitizedQuery !== lastExecutedQuery) {
+            if (sanitizedQuery !== lastExecutedQuery || page > 1) {
                 try {
-                    setLoading(true)
-                    const response = await api.search(sanitizedQuery)
-                    setResults(response.results)
-                    setLastExecutedQuery(sanitizedQuery)
+                    if (page === 1) {
+                        setLoading(true)
+                    }
 
-                    navigate(`/search?q=${encodeURIComponent(sanitizedQuery)}`, {
-                        replace: true,
-                        state: {
-                            results: response.results,
-                            lastExecutedQuery: sanitizedQuery
-                        }
-                    })
+                    const response = await api.search(sanitizedQuery, page, ITEMS_PER_PAGE)
+
+                    if (page === 1) {
+                        setResults(response.results)
+                    } else {
+                        setResults(prev => [...prev, ...response.results])
+                    }
+
+                    setLastExecutedQuery(sanitizedQuery)
+                    setHasMore(response.results.length === ITEMS_PER_PAGE)
+
+                    if (page === 1) {
+                        navigate(`/search?q=${encodeURIComponent(sanitizedQuery)}`, {
+                            replace: true,
+                            state: {
+                                results: response.results,
+                                lastExecutedQuery: sanitizedQuery
+                            }
+                        })
+                    }
                 } catch (err) {
                     console.error('Search error:', err)
                     setError('Failed to perform search')
@@ -68,11 +83,11 @@ function SearchResults() {
     )
 
     useEffect(() => {
-        debouncedSearch(searchQuery)
+        debouncedSearch(searchQuery, currentPage)
         return () => {
             debouncedSearch.cancel()
         }
-    }, [searchQuery, debouncedSearch])
+    }, [searchQuery, currentPage, debouncedSearch])
 
     useEffect(() => {
         if (!initialSearchQuery && !location.state?.results) {
@@ -85,6 +100,12 @@ function SearchResults() {
             navigate(`/search?q=${encodeURIComponent(searchQuery)}`)
         }
     }
+
+    const handleLoadMore = useCallback(() => {
+        if (!loading && hasMore) {
+            setCurrentPage(prev => prev + 1)
+        }
+    }, [loading, hasMore])
 
     if (loading) {
         return (
@@ -170,6 +191,16 @@ function SearchResults() {
                         </div>
                     ))}
                 </Masonry>
+
+                {hasMore && (
+                    <LoadingTrigger onIntersect={handleLoadMore} enabled={!loading} />
+                )}
+
+                {loading && currentPage > 1 && (
+                    <div className="mt-8 flex justify-center">
+                        <div className="animate-spin h-8 w-8 border-2 border-[#00ff00] border-t-transparent rounded-full"></div>
+                    </div>
+                )}
             </main>
 
             <Footer />

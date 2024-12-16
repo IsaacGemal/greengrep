@@ -30,6 +30,11 @@ export interface SearchResponse {
   results: SearchResult[];
 }
 
+export interface PaginatedSearchResponse extends SearchResponse {
+  page: number;
+  limit: number;
+}
+
 export const api = {
   async getFiles(
     cursor?: string,
@@ -60,9 +65,19 @@ export const api = {
     }
   },
 
-  async search(query: string): Promise<SearchResponse> {
-    const params = new URLSearchParams({ q: query });
-    const response = await fetch(`${API_BASE_URL}/vector-search?${params}`);
+  async search(
+    query: string,
+    page: number = 1,
+    limit: number = 20
+  ): Promise<PaginatedSearchResponse> {
+    const params = new URLSearchParams({
+      q: query,
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    const response = await fetch(
+      `${API_BASE_URL}/vector-search-paginated?${params}`
+    );
 
     if (!response.ok) {
       const errorData = await response.json();
