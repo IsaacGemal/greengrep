@@ -7,6 +7,7 @@ import { api } from '../services/api'
 import { SearchResult } from '../services/api'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
+import LoadingTrigger from '../components/LoadingTrigger'
 
 function SearchResults() {
     const [searchParams] = useSearchParams()
@@ -44,7 +45,10 @@ function SearchResults() {
 
             if (sanitizedQuery !== lastExecutedQuery || page > 1) {
                 try {
-                    setLoading(true)
+                    if (page === 1) {
+                        setLoading(true)
+                    }
+
                     const response = await api.search(sanitizedQuery, page, ITEMS_PER_PAGE)
 
                     if (page === 1) {
@@ -97,11 +101,11 @@ function SearchResults() {
         }
     }
 
-    const loadMore = () => {
+    const handleLoadMore = useCallback(() => {
         if (!loading && hasMore) {
             setCurrentPage(prev => prev + 1)
         }
-    }
+    }, [loading, hasMore])
 
     if (loading) {
         return (
@@ -188,15 +192,13 @@ function SearchResults() {
                     ))}
                 </Masonry>
 
-                {results.length > 0 && hasMore && (
+                {hasMore && (
+                    <LoadingTrigger onIntersect={handleLoadMore} enabled={!loading} />
+                )}
+
+                {loading && currentPage > 1 && (
                     <div className="mt-8 flex justify-center">
-                        <button
-                            onClick={loadMore}
-                            disabled={loading}
-                            className="bg-[#002f1f] border border-[#004d2f] text-[#00ff00] px-4 py-2 rounded hover:border-[#00ff00] transition-colors duration-200 disabled:opacity-50"
-                        >
-                            {loading ? 'Loading...' : 'Load More'}
-                        </button>
+                        <div className="animate-spin h-8 w-8 border-2 border-[#00ff00] border-t-transparent rounded-full"></div>
                     </div>
                 )}
             </main>
