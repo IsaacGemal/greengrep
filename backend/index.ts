@@ -1,5 +1,6 @@
 import { Elysia, error, t } from "elysia";
 import { cors } from "@elysiajs/cors";
+import { rateLimit } from "elysia-rate-limit";
 import {
   S3,
   ListObjectsV2Command,
@@ -60,6 +61,17 @@ const app = new Elysia()
     })
   )
   .use(cors())
+  .use(
+    rateLimit({
+      duration: 60000, // 1 minute in milliseconds
+      max: 20, // Maximum 20 requests per window
+      // Optional: different limits for specific routes
+      generator: (request) => {
+        // Use IP address as identifier for rate limiting
+        return request.headers.get("x-forwarded-for") || "unknown";
+      },
+    })
+  )
   // Global error handler: log the error and respond with a generic message
   .onError(({ error }) => {
     console.error("Server error:", error);
@@ -182,9 +194,10 @@ app.post(
 );
 
 // Vector similarity search
+// This is the old one without pagination
 app.get(
   "/api/vector-search",
-  async ({ query, error }) => {
+  async ({ query, error, set }) => {
     const searchQuery = query.q;
     if (!searchQuery) {
       return error(400, { error: "Search query is required" });
@@ -210,6 +223,11 @@ app.get(
       // Cache the results
       await setCachedSearch(searchQuery, results);
 
+      // Add rate limit headers to response
+      set.headers["X-RateLimit-Remaining"] =
+        set.headers["x-ratelimit-remaining"];
+      set.headers["X-RateLimit-Reset"] = set.headers["x-ratelimit-reset"];
+
       return {
         query: searchQuery,
         results,
@@ -232,11 +250,9 @@ app.get(
 );
 
 // Experimental paginated vector search
-// Note - there is no frontend for this yet
-// This is just a proof of concept
 app.get(
   "/api/vector-search-paginated",
-  async ({ query, error }) => {
+  async ({ query, error, set }) => {
     const searchQuery = query.q;
     const page = query.page ?? "1";
     const limit = query.limit ?? "20";
@@ -277,6 +293,11 @@ app.get(
       // This still works because the query is just treated as a string
       // Will look for "cats:1:20" for example
       await setCachedSearch(cacheKey, results);
+
+      // Add rate limit headers to response
+      set.headers["X-RateLimit-Remaining"] =
+        set.headers["x-ratelimit-remaining"];
+      set.headers["X-RateLimit-Reset"] = set.headers["x-ratelimit-reset"];
 
       return {
         query: searchQuery,
