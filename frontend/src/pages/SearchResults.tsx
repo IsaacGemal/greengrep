@@ -182,7 +182,7 @@ function SearchResults() {
                                     {lastExecutedQuery !== 'Random Posts' && (
                                         <div className="p-4">
                                             <p className="text-[#008000] text-sm">
-                                                Similarity: {(result.similarity * 100).toFixed(2)}%
+                                                Similarity: {((result.similarity * 100) % 100).toFixed(2)}%
                                             </p>
                                         </div>
                                     )}
