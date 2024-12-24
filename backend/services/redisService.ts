@@ -13,6 +13,9 @@ const SEARCH_RESULTS_TTL = 5 * 60;
 // Long TTL for embeddings (1 week)
 const EMBEDDING_TTL = 7 * 24 * 60 * 60;
 
+// TTL for stats (1 hour)
+const STATS_TTL = 60 * 60;
+
 // Add a prefix based on the database URL to prevent cache collisions
 const DB_PREFIX = process.env.DATABASE_URL
   ? Buffer.from(process.env.DATABASE_URL).toString("base64").slice(0, 10)
@@ -72,6 +75,29 @@ export async function setCachedEmbedding(text: string, embedding: number[]) {
       `${DB_PREFIX}:embedding:${text}`,
       EMBEDDING_TTL,
       JSON.stringify(embedding)
+    );
+  } catch (error) {
+    console.error("Redis set error:", error);
+  }
+}
+
+// Cache functions for stats
+export async function getCachedStats(): Promise<number | null> {
+  try {
+    const cached = await redis.get(`${DB_PREFIX}:stats:total_posts`);
+    return cached ? parseInt(cached) : null;
+  } catch (error) {
+    console.error("Redis get error:", error);
+    return null;
+  }
+}
+
+export async function setCachedStats(count: number): Promise<void> {
+  try {
+    await redis.setex(
+      `${DB_PREFIX}:stats:total_posts`,
+      STATS_TTL,
+      count.toString()
     );
   } catch (error) {
     console.error("Redis set error:", error);
