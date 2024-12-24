@@ -35,7 +35,9 @@ function ImageDetails() {
                     <div className="p-6" style={{ width: 'min(90vw, 100%)' }}>
                         <h1 className="text-2xl font-medium mb-4">{key}</h1>
                         <div className="text-[#008000] space-y-2">
-                            <p>Similarity: {(file.similarity * 100).toFixed(2)}%</p>
+                            {location.state?.lastExecutedQuery !== 'Random Posts' && (
+                                <p>Similarity: {((file.similarity * 100) % 100).toFixed(2)}%</p>
+                            )}
                             <p>URL: <a href={file.url} target="_blank" rel="noopener noreferrer"
                                 className="text-[#00ff00] hover:text-[#7cfc00] transition-colors duration-200">
                                 View original
