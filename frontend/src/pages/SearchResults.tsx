@@ -43,6 +43,11 @@ function SearchResults() {
                 return
             }
 
+            if (sanitizedQuery !== lastExecutedQuery) {
+                setCurrentPage(1)
+                page = 1
+            }
+
             if (sanitizedQuery !== lastExecutedQuery || page > 1) {
                 try {
                     if (page === 1) {
