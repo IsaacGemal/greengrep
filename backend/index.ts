@@ -64,8 +64,7 @@ const app = new Elysia()
   .use(
     rateLimit({
       duration: 60000, // 1 minute in milliseconds
-      max: 20, // Maximum 20 requests per window
-      // Optional: different limits for specific routes
+      max: 500, // 500 requests per minute will not be a problem
       generator: (request) => {
         // Use IP address as identifier for rate limiting
         return request.headers.get("x-forwarded-for") || "unknown";
