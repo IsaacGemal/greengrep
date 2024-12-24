@@ -43,6 +43,11 @@ function SearchResults() {
                 return
             }
 
+            if (sanitizedQuery !== lastExecutedQuery) {
+                setCurrentPage(1)
+                page = 1
+            }
+
             if (sanitizedQuery !== lastExecutedQuery || page > 1) {
                 try {
                     if (page === 1) {
@@ -164,7 +169,7 @@ function SearchResults() {
                         <div key={index} className="block mb-6">
                             <Link
                                 to={`/image/${encodeURIComponent(result.url?.split('/').pop() || '')}`}
-                                state={{ file: result }}
+                                state={{ file: result, lastExecutedQuery }}
                             >
                                 <div className="bg-[#002f1f] border border-[#004d2f] rounded-lg overflow-hidden hover:border-[#00ff00] transition-colors duration-200">
                                     <div className={`relative ${result.is_nsfw && !nsfwEnabled ? 'blur-xl' : ''}`}>

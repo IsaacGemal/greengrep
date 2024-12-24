@@ -132,6 +132,7 @@ export async function searchPostsPaginated(
       FROM "Content" c
       JOIN "Post" p ON p."contentId" = c.id
       WHERE (c.embedding::vector <#> ${searchEmbedding}::vector) < 0.3
+      AND p.url IS NOT NULL
       ORDER BY similarity DESC
       LIMIT ${limit}
       OFFSET ${offset};
