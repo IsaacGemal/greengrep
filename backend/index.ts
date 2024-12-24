@@ -14,7 +14,9 @@ import searchPosts, { searchPostsPaginated } from "./services/dbService";
 import { swagger } from "@elysiajs/swagger";
 import {
   getCachedSearch,
+  getCachedStats,
   setCachedSearch,
+  setCachedStats,
   type SearchResult,
 } from "./services/redisService";
 import { getRandomPosts } from "./services/dbService";
@@ -372,20 +374,48 @@ app.get(
   }
 );
 
-// Simple post count
-// Technically this could be cached too with redis, driving down the time complexity
-// But it's just a simple count, so it's not a big deal
-app.get("/api/stats", async () => {
-  try {
-    const count = await prisma.post.count();
-    return {
-      totalImages: count,
-    };
-  } catch (err) {
-    console.error("Stats error:", err);
-    return error(500, { error: "Failed to fetch stats" });
+// Simple post count with Redis caching
+app.get(
+  "/api/stats",
+  async () => {
+    try {
+      // Try to get cached count first
+      const cachedCount = await getCachedStats();
+      if (cachedCount !== null) {
+        return {
+          totalImages: cachedCount,
+          cached: true,
+        };
+      }
+
+      // If no cache, get count from DB
+      const count = await prisma.post.count();
+
+      // Cache the result
+      await setCachedStats(count);
+
+      return {
+        totalImages: count,
+        cached: false,
+      };
+    } catch (err) {
+      console.error("Stats error:", err);
+      return error(500, { error: "Failed to fetch stats" });
+    }
+  },
+  {
+    // Add response schema for Swagger
+    response: {
+      200: t.Object({
+        totalImages: t.Number(),
+        cached: t.Boolean(),
+      }),
+      500: t.Object({
+        error: t.String(),
+      }),
+    },
   }
-});
+);
 
 app.listen(
   {
