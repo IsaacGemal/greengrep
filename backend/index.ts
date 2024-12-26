@@ -194,53 +194,39 @@ app.post(
   }
 );
 
-// Vector similarity search
-// This is the old one without pagination
+// Vector similarity search (without pagination)
 app.get(
   "/api/vector-search",
-  async ({ query, error, set }) => {
-    const searchQuery = query.q;
-    if (!searchQuery) {
-      return error(400, { error: "Search query is required" });
-    }
-
-    try {
-      // Check cache first
-      const cachedResults = await getCachedSearch(searchQuery);
-      if (cachedResults) {
-        console.log("Cache hit for query:", searchQuery);
-        return {
-          query: searchQuery,
-          results: cachedResults as SearchResult[],
-          cached: true,
-        };
-      }
-
-      console.log("Cache miss for query:", searchQuery);
-      // If not in cache, perform the search
-      const embedding = await generateSearchEmbedding(searchQuery);
-      const results = (await searchPosts(embedding)) as SearchResult[];
-
-      // Cache the results
-      await setCachedSearch(searchQuery, results);
-
-      // Add rate limit headers to response
-      set.headers["X-RateLimit-Remaining"] =
-        set.headers["x-ratelimit-remaining"];
-      set.headers["X-RateLimit-Reset"] = set.headers["x-ratelimit-reset"];
-
+  async ({ query, set }) => {
+    // Check cache first
+    const cachedResults = await getCachedSearch(query.q);
+    if (cachedResults) {
+      console.log("Cache hit for query:", query.q);
       return {
-        query: searchQuery,
-        results,
-        cached: false,
+        query: query.q,
+        results: cachedResults as SearchResult[],
+        cached: true,
       };
-    } catch (err) {
-      console.error("Vector search error:", err);
-      return error(500, { error: "Search failed" });
     }
+
+    console.log("Cache miss for query:", query.q);
+    const embedding = await generateSearchEmbedding(query.q);
+    const results = (await searchPosts(embedding)) as SearchResult[];
+
+    // Cache the results
+    await setCachedSearch(query.q, results);
+
+    // Add rate limit headers
+    set.headers["X-RateLimit-Remaining"] = set.headers["x-ratelimit-remaining"];
+    set.headers["X-RateLimit-Reset"] = set.headers["x-ratelimit-reset"];
+
+    return {
+      query: query.q,
+      results,
+      cached: false,
+    };
   },
   {
-    // Add query parameter definition for Swagger
     query: t.Object({
       q: t.String({
         description: "Search query term",
@@ -253,67 +239,47 @@ app.get(
 // Experimental paginated vector search
 app.get(
   "/api/vector-search-paginated",
-  async ({ query, error, set }) => {
-    const searchQuery = query.q;
+  async ({ query, set }) => {
     const page = query.page ?? "1";
     const limit = query.limit ?? "20";
-    const offset = (Number(page) - 1) * Number(limit); // Typescript weirdness
+    const offset = (Number(page) - 1) * Number(limit);
+    const cacheKey = `${query.q}:${page}:${limit}`;
 
-    if (!searchQuery) {
-      return error(400, { error: "Search query is required" });
-    }
-
-    try {
-      // Create cache key that includes pagination params
-      const cacheKey = `${searchQuery}:${page}:${limit}`;
-
-      // Check cache first with pagination params
-      const cachedResults = await getCachedSearch(cacheKey);
-      if (cachedResults) {
-        console.log("Cache hit for paginated query:", cacheKey);
-        return {
-          query: searchQuery,
-          results: cachedResults as SearchResult[],
-          page,
-          limit,
-          cached: true,
-        };
-      }
-
-      console.log("Cache miss for paginated query:", cacheKey);
-
-      // If not in cache, perform the search using the paginated version
-      const embedding = await generateSearchEmbedding(searchQuery);
-      const results = (await searchPostsPaginated(
-        embedding,
-        Number(limit),
-        offset
-      )) as SearchResult[];
-
-      // Cache the paginated results
-      // This still works because the query is just treated as a string
-      // Will look for "cats:1:20" for example
-      await setCachedSearch(cacheKey, results);
-
-      // Add rate limit headers to response
-      set.headers["X-RateLimit-Remaining"] =
-        set.headers["x-ratelimit-remaining"];
-      set.headers["X-RateLimit-Reset"] = set.headers["x-ratelimit-reset"];
-
+    // Check cache first with pagination params
+    const cachedResults = await getCachedSearch(cacheKey);
+    if (cachedResults) {
+      console.log("Cache hit for paginated query:", cacheKey);
       return {
-        query: searchQuery,
-        results,
+        query: query.q,
+        results: cachedResults as SearchResult[],
         page,
         limit,
-        cached: false,
+        cached: true,
       };
-    } catch (err) {
-      console.error("Paginated vector search error:", err);
-      return error(500, { error: "Search failed" });
     }
+
+    console.log("Cache miss for paginated query:", cacheKey);
+    const embedding = await generateSearchEmbedding(query.q);
+    const results = (await searchPostsPaginated(
+      embedding,
+      Number(limit),
+      offset
+    )) as SearchResult[];
+
+    await setCachedSearch(cacheKey, results);
+
+    set.headers["X-RateLimit-Remaining"] = set.headers["x-ratelimit-remaining"];
+    set.headers["X-RateLimit-Reset"] = set.headers["x-ratelimit-reset"];
+
+    return {
+      query: query.q,
+      results,
+      page,
+      limit,
+      cached: false,
+    };
   },
   {
-    // Add query parameter definitions for Swagger
     query: t.Object({
       q: t.String({
         description: "Search query term",
