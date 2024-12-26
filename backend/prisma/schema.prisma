@@ -12,17 +12,18 @@ datasource db {
 }
 
 model Post {
-  id        String   @id @default(cuid())
-  post_id   String?
-  board     String?
-  timestamp DateTime
-  poster    String   @default("Anonymous")
-  is_nsfw   Boolean  @default(false)
-  url       String?
-  content   Content  @relation(fields: [contentId], references: [id])
-  contentId String   @unique
-  image     Image?   @relation(fields: [imageId], references: [id])
-  imageId   String?
+  id          String   @id @default(cuid())
+  post_id     String?
+  board       String?
+  timestamp   DateTime // The timestamp of the actual post, not the time it was uploaded
+  poster      String   @default("Anonymous")
+  uploaded_at DateTime @default(now()) // The time the post was uploaded
+  is_nsfw     Boolean  @default(false)
+  url         String?
+  contentId   String   @unique
+  imageId     String?
+  content     Content  @relation(fields: [contentId], references: [id])
+  image       Image?   @relation(fields: [imageId], references: [id])
 
   @@index([post_id])
   @@index([timestamp])
