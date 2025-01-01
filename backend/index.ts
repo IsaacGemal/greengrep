@@ -21,9 +21,7 @@ import {
 } from "./services/redisService";
 import { getRandomPosts } from "./services/dbService";
 import { findSimilarItems } from "./services/duplicateService";
-import { PrismaClient } from "@prisma/client";
 import { sql } from "drizzle-orm";
-import { posts } from "./drizzle/schema";
 import { db } from "./drizzle/db";
 
 const BUCKET_NAME = process.env.BUCKET_NAME || "greengrep";
@@ -38,8 +36,6 @@ const s3 = new S3({
     secretAccessKey: AWS_SECRET_ACCESS_KEY,
   },
 });
-
-const prisma = new PrismaClient();
 
 const PROD_URL = "https://greengrep-production.up.railway.app";
 const DEV_URL = "http://localhost:3001";
