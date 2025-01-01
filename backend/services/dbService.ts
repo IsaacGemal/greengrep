@@ -2,6 +2,8 @@ import { PrismaClient } from "@prisma/client";
 import type { Post, Content, Image } from "@prisma/client";
 import type { ImageAnalysis } from "./types";
 import { generateEmbeddings } from "./openaiService";
+import { sql } from "drizzle-orm";
+import { db } from "../drizzle/db";
 
 const prisma = new PrismaClient();
 
@@ -80,7 +82,7 @@ export async function storeAnalysis(analysis: ImageAnalysis) {
 
 export default async function searchPosts(searchEmbedding: number[]) {
   try {
-    return await prisma.$queryRaw`
+    const results = await prisma.$queryRaw`
       SELECT 
         p.url,
         p.is_nsfw,
@@ -91,6 +93,8 @@ export default async function searchPosts(searchEmbedding: number[]) {
       ORDER BY similarity DESC
       LIMIT 20;
     `;
+    // Convert QueryResult to array
+    return Array.isArray(results) ? results : [];
   } catch (error) {
     console.error(
       "Search error:",
@@ -100,18 +104,26 @@ export default async function searchPosts(searchEmbedding: number[]) {
   }
 }
 
+// New - using drizzle instead of prisma
 export async function getRandomPosts(
-  limit: number = 100 // We can change or adjust this later, for now it's hardcoded to 100
+  limit: number = 100
 ): Promise<{ url: string; is_nsfw: boolean }[]> {
   try {
-    const results = await prisma.$queryRaw<{ url: string; is_nsfw: boolean }[]>`
-      SELECT url, is_nsfw
-      FROM "Post"
-      WHERE url IS NOT NULL
-      ORDER BY RANDOM()
-      LIMIT ${limit}`;
+    const results = await db
+      .select({
+        url: sql<string>`"Post".url`,
+        is_nsfw: sql<boolean>`"Post"."is_nsfw"`,
+      })
+      .from(sql`"Post"`)
+      .where(sql`"Post".url IS NOT NULL`)
+      .orderBy(sql`RANDOM()`)
+      .limit(limit);
 
-    return results;
+    // Type conversion to match the expected return type
+    return results.map((post) => ({
+      url: post.url ?? "",
+      is_nsfw: post.is_nsfw ?? false,
+    }));
   } catch (error) {
     console.error("Random posts error:", error);
     throw new Error("Failed to fetch random posts");
@@ -124,7 +136,7 @@ export async function searchPostsPaginated(
   offset: number = 0
 ) {
   try {
-    return await prisma.$queryRaw`
+    const results = await prisma.$queryRaw`
       SELECT 
         p.url,
         p.is_nsfw,
@@ -137,6 +149,8 @@ export async function searchPostsPaginated(
       LIMIT ${limit}
       OFFSET ${offset};
     `;
+    // Convert QueryResult to array
+    return Array.isArray(results) ? results : [];
   } catch (error) {
     console.error(
       "Paginated search error:",
