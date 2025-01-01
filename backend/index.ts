@@ -263,7 +263,7 @@ app.get(
       embedding,
       Number(limit),
       offset
-    )) as SearchResult[];
+    )) as unknown as SearchResult[]; // This is a hack but for now it works
 
     await setCachedSearch(cacheKey, results);
 
