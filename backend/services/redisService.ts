@@ -21,12 +21,11 @@ const DB_PREFIX = process.env.DATABASE_URL
   ? Buffer.from(process.env.DATABASE_URL).toString("base64").slice(0, 10)
   : "local";
 
-// Export the interface so it can be reused
+// Single, clean interface for search results
+// We can always add more fields as needed
 export interface SearchResult {
-  id: string;
-  url: string | null;
-  text: string[];
-  greentext: string[];
+  url: string;
+  is_nsfw: boolean;
   similarity: number;
 }
 

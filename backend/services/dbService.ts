@@ -136,26 +136,24 @@ export async function searchPostsPaginated(
   offset: number = 0
 ) {
   try {
-    const results = await prisma.$queryRaw`
+    const query = sql.raw(`
       SELECT 
         p.url,
         p.is_nsfw,
-        1 - (c.embedding::vector <#> ${searchEmbedding}::vector) as similarity
+        1 - (c.embedding::vector <#> ARRAY[${searchEmbedding.join(", ")}]::vector) as similarity
       FROM "Content" c
       JOIN "Post" p ON p."contentId" = c.id
-      WHERE (c.embedding::vector <#> ${searchEmbedding}::vector) < 0.3
+      WHERE (c.embedding::vector <#> ARRAY[${searchEmbedding.join(", ")}]::vector) < 0.3
       AND p.url IS NOT NULL
       ORDER BY similarity DESC
       LIMIT ${limit}
-      OFFSET ${offset};
-    `;
-    // Convert QueryResult to array
-    return Array.isArray(results) ? results : [];
+      OFFSET ${offset}
+    `);
+
+    const results = await db.execute(query);
+    return results.rows;
   } catch (error) {
-    console.error(
-      "Paginated search error:",
-      error instanceof Error ? error.message : error
-    );
+    console.error("Paginated search error:", error);
     throw new Error("Failed to perform paginated vector search");
   }
 }
