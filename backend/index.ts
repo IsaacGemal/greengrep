@@ -22,6 +22,9 @@ import {
 import { getRandomPosts } from "./services/dbService";
 import { findSimilarItems } from "./services/duplicateService";
 import { PrismaClient } from "@prisma/client";
+import { sql } from "drizzle-orm";
+import { posts } from "./drizzle/schema";
+import { db } from "./drizzle/db";
 
 const BUCKET_NAME = process.env.BUCKET_NAME || "greengrep";
 const AWS_REGION = process.env.AWS_REGION || "us-east-1";
@@ -345,7 +348,6 @@ app.get(
   "/api/stats",
   async () => {
     try {
-      // Try to get cached count first
       const cachedCount = await getCachedStats();
       if (cachedCount !== null) {
         return {
@@ -354,14 +356,16 @@ app.get(
         };
       }
 
-      // If no cache, get count from DB
-      const count = await prisma.post.count();
+      // Use "Post" instead of "Posts"
+      const result = await db.execute(
+        sql`SELECT COUNT(*) as count FROM "Post"`
+      );
+      const totalCount = Number(result.rows[0].count);
 
-      // Cache the result
-      await setCachedStats(count);
+      await setCachedStats(totalCount);
 
       return {
-        totalImages: count,
+        totalImages: totalCount,
         cached: false,
       };
     } catch (err) {

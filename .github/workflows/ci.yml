@@ -56,6 +56,9 @@ jobs:
       - name: Generate Prisma Client
         run: cd backend && bunx prisma generate
 
+      - name: Check Drizzle Schema
+        run: cd backend && bunx drizzle-kit check
+
       - name: Backend Lint
         run: cd backend && bun run lint
 
