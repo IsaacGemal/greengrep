@@ -14,6 +14,7 @@
     "@types/bun": "latest",
     "@types/ioredis": "^5.0.0",
     "@types/pg": "^8.11.10",
+    "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "drizzle-kit": "^0.30.1",
