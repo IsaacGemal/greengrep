@@ -6,6 +6,35 @@ import { content, images, posts } from "../drizzle/schema";
 import { v4 as uuidv4 } from "uuid";
 import type { SearchResult } from "./redisService";
 
+// Add this type definition near the top of the file or in a separate types file
+// Todo - we will centralize all of this in a single file
+type StoredAnalysisResult = {
+  id: string;
+  postId: string | null;
+  board: string;
+  timestamp: Date;
+  poster: string;
+  isNsfw: boolean;
+  url: string;
+  contentId: string;
+  imageId: string | null;
+  uploadedAt: Date;
+  content: {
+    id: string;
+    greentext: string[] | null;
+    text: string[] | null;
+    embedding: number[] | null;
+  };
+  image: {
+    id: string;
+    filename: string | null;
+    size: string | null;
+    format: string | null;
+    dimensions: string | null;
+    description: string | null;
+  } | null;
+};
+
 // Updated function with explicit return type
 export default async function searchPosts(
   searchEmbedding: number[]
@@ -159,7 +188,7 @@ export async function storeAnalysis(analysis: ImageAnalysis) {
 
   return results
     .filter(
-      (result): result is PromiseFulfilledResult<any> =>
+      (result): result is PromiseFulfilledResult<StoredAnalysisResult> =>
         result.status === "fulfilled"
     )
     .map((result) => result.value);
