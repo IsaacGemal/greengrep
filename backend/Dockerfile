@@ -4,7 +4,7 @@ FROM oven/bun:1 AS build
 WORKDIR /app
 
 # Keep OpenSSL for Prisma
-RUN apt-get update -y && apt-get install -y openssl
+# RUN apt-get update -y && apt-get install -y openssl
 
 # Copy package files
 COPY package.json .
@@ -19,7 +19,7 @@ COPY drizzle.config.ts .
 RUN bun install
 
 # Generate Prisma client
-RUN bunx prisma generate
+# RUN bunx prisma generate
 
 # Copy source files
 COPY . .
@@ -38,7 +38,7 @@ FROM oven/bun:1-slim
 WORKDIR /app
 
 # Keep OpenSSL for Prisma
-RUN apt-get update -y && apt-get install -y openssl
+# RUN apt-get update -y && apt-get install -y openssl
 
 # Copy built executable and necessary files
 COPY --from=build /app/dist/server ./server
