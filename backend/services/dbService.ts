@@ -1,35 +1,36 @@
-import { PrismaClient } from "@prisma/client";
 import type { ImageAnalysis } from "./types";
 import { generateEmbeddings } from "./openaiService";
 import { sql } from "drizzle-orm";
 import { db } from "../drizzle/db";
 import { content, images, posts } from "../drizzle/schema";
 import { v4 as uuidv4 } from "uuid";
+import type { SearchResult } from "./redisService";
 
-const prisma = new PrismaClient();
-
-// WIP since we're moving to drizzle
-// We can worry about this one later
-export default async function searchPosts(searchEmbedding: number[]) {
+// Updated function with explicit return type
+export default async function searchPosts(
+  searchEmbedding: number[]
+): Promise<SearchResult[]> {
   try {
-    const results = await prisma.$queryRaw`
+    const query = sql.raw(`
       SELECT 
         p.url,
         p.is_nsfw,
-        1 - (c.embedding::vector <#> ${searchEmbedding}::vector) as similarity
+        1 - (c.embedding::vector <#> ARRAY[${searchEmbedding.join(", ")}]::vector) as similarity
       FROM "Content" c
       JOIN "Post" p ON p."contentId" = c.id
-      WHERE (c.embedding::vector <#> ${searchEmbedding}::vector) < 0.3
+      WHERE (c.embedding::vector <#> ARRAY[${searchEmbedding.join(", ")}]::vector) < 0.3
       ORDER BY similarity DESC
-      LIMIT 20;
-    `;
-    // Convert QueryResult to array
-    return Array.isArray(results) ? results : [];
+      LIMIT 20
+    `);
+
+    const results = await db.execute(query);
+    return results.rows.map((row) => ({
+      url: row.url as string,
+      is_nsfw: row.is_nsfw as boolean,
+      similarity: row.similarity as number,
+    }));
   } catch (error) {
-    console.error(
-      "Search error:",
-      error instanceof Error ? error.message : error
-    );
+    console.error("Search error:", error);
     throw new Error("Failed to perform vector search");
   }
 }
