@@ -1,85 +1,15 @@
 import { PrismaClient } from "@prisma/client";
-import type { Post, Content, Image } from "@prisma/client";
 import type { ImageAnalysis } from "./types";
 import { generateEmbeddings } from "./openaiService";
 import { sql } from "drizzle-orm";
 import { db } from "../drizzle/db";
+import { content, images, posts } from "../drizzle/schema";
+import { v4 as uuidv4 } from "uuid";
 
 const prisma = new PrismaClient();
 
-export async function storeAnalysis(analysis: ImageAnalysis) {
-  const embeddings = await generateEmbeddings(analysis);
-
-  const posts = await Promise.allSettled(
-    analysis.posts.map(async (post, index) => {
-      try {
-        const content = await prisma.content.create({
-          data: {
-            greentext: post.content.greentext,
-            text: post.content.text,
-            embedding: embeddings[index].embedding,
-          },
-        });
-
-        // Create Image if it exists
-        let image = null;
-        if (post.embedded_image) {
-          image = await prisma.image.create({
-            data: {
-              filename: post.embedded_image.filename,
-              size: post.embedded_image.size,
-              format: post.embedded_image.format,
-              dimensions: post.embedded_image.dimensions,
-              description: post.embedded_image.description,
-            },
-          });
-        }
-
-        // Create the Post with optional post_id
-        return await prisma.post.create({
-          data: {
-            post_id: post.post_id || null,
-            board: post.board,
-            timestamp: new Date(post.timestamp),
-            poster: post.poster || "Anonymous",
-            is_nsfw: post.is_nsfw || false,
-            url: post.url,
-            content: {
-              connect: { id: content.id },
-            },
-            image: image
-              ? {
-                  connect: { id: image.id },
-                }
-              : undefined,
-          },
-          include: {
-            content: true,
-            image: true,
-          },
-        });
-      } catch (error) {
-        console.error(`Failed to store post: ${error}`);
-        throw error;
-      }
-    })
-  );
-
-  // Filter out rejected promises and return successful posts
-  return posts
-    .filter(
-      (
-        result
-      ): result is PromiseFulfilledResult<
-        Post & {
-          content: Content;
-          image: Image | null;
-        }
-      > => result.status === "fulfilled"
-    )
-    .map((result) => result.value);
-}
-
+// WIP since we're moving to drizzle
+// We can worry about this one later
 export default async function searchPosts(searchEmbedding: number[]) {
   try {
     const results = await prisma.$queryRaw`
@@ -156,4 +86,80 @@ export async function searchPostsPaginated(
     console.error("Paginated search error:", error);
     throw new Error("Failed to perform paginated vector search");
   }
+}
+
+// New - using drizzle instead of prisma
+export async function storeAnalysis(analysis: ImageAnalysis) {
+  const embeddings = await generateEmbeddings(analysis);
+
+  const results = await Promise.allSettled(
+    analysis.posts.map(async (post, index) => {
+      try {
+        // Generate UUIDs for our records
+        const contentId = uuidv4();
+        const imageId = post.embedded_image ? uuidv4() : null;
+        const postId = uuidv4();
+
+        // Insert content first
+        const [insertedContent] = await db
+          .insert(content)
+          .values({
+            id: contentId,
+            greentext: post.content.greentext,
+            text: post.content.text,
+            embedding: embeddings[index].embedding,
+          })
+          .returning();
+
+        // Insert image if it exists
+        let insertedImage = null;
+        if (post.embedded_image && imageId) {
+          [insertedImage] = await db
+            .insert(images)
+            .values({
+              id: imageId,
+              filename: post.embedded_image.filename,
+              size: post.embedded_image.size,
+              format: post.embedded_image.format,
+              dimensions: post.embedded_image.dimensions,
+              description: post.embedded_image.description,
+            })
+            .returning();
+        }
+
+        // Insert post
+        const [insertedPost] = await db
+          .insert(posts)
+          .values({
+            id: postId,
+            postId: post.post_id || null,
+            board: post.board,
+            timestamp: new Date(post.timestamp),
+            poster: post.poster || "Anonymous",
+            isNsfw: post.is_nsfw || false,
+            url: post.url,
+            contentId: contentId,
+            imageId: imageId,
+          })
+          .returning();
+
+        // Manually combine the results
+        return {
+          ...insertedPost,
+          content: insertedContent,
+          image: insertedImage,
+        };
+      } catch (error) {
+        console.error(`Failed to store post: ${error}`);
+        throw error;
+      }
+    })
+  );
+
+  return results
+    .filter(
+      (result): result is PromiseFulfilledResult<any> =>
+        result.status === "fulfilled"
+    )
+    .map((result) => result.value);
 }
