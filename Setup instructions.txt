@@ -18,9 +18,9 @@ To start the PostgreSQL database with Docker:
    cd greengrep/backend
 3. Start the Docker container:
    docker-compose up -d
-4. Apply Prisma migrations to create the User table:
-   npx prisma migrate dev --name init
-5. Use Prisma Studio to inspect the database:
-   npx prisma studio
+4. Apply Drizzle migrations:
+   bunx drizzle-kit push
+5. Use Drizzle Studio to inspect the database:
+   bunx drizzle-kit studio
 
 Happy coding!

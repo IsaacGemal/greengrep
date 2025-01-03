@@ -22,7 +22,7 @@ export async function analyzeImage(
     const base64Image = Buffer.from(imageBuffer).toString("base64");
 
     // Detect actual file type
-    const fileType = await fileTypeFromBuffer(Buffer.from(imageBuffer));
+    const fileType = await fileTypeFromBuffer(new Uint8Array(imageBuffer));
     const detectedMimeType = fileType?.mime || "image/jpeg";
 
     console.log("Image URL:", imageUrl);
